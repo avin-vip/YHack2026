@@ -3,6 +3,7 @@ import json
 import re
 import asyncio
 import time
+from urllib.parse import quote
 
 import google.generativeai as genai
 import httpx
@@ -10,14 +11,45 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+# ── Lava gateway config ──
+LAVA_ENDPOINT = "https://api.lava.so/v1/forward"
+
+LAVA_MODELS = {
+    "gpt-4o": {
+        "name": "GPT-4o",
+        "provider_url": "https://api.openai.com/v1/chat/completions",
+        "model_id": "gpt-4o",
+        "format": "openai",
+    },
+    "claude-sonnet": {
+        "name": "Claude Sonnet 4",
+        "provider_url": "https://api.anthropic.com/v1/messages",
+        "model_id": "claude-sonnet-4-20250514",
+        "format": "anthropic",
+    },
+    "claude-haiku": {
+        "name": "Claude Haiku 4.5",
+        "provider_url": "https://api.anthropic.com/v1/messages",
+        "model_id": "claude-haiku-4-5-20251001",
+        "format": "anthropic",
+    },
+    "kimi": {
+        "name": "Kimi",
+        "provider_url": "https://api.moonshot.cn/v1/chat/completions",
+        "model_id": "moonshot-v1-auto",
+        "format": "openai",
+    },
+}
+
 AVAILABLE_MODELS = {
     "gemini": "Gemini 2.5 Flash",
     "k2": "K2 Think V2",
+    **{k: v["name"] for k, v in LAVA_MODELS.items()},
 }
 
 
 class LLMClient:
-    """LLM client abstraction. Supports Gemini and K2 Think V2."""
+    """LLM client abstraction. Supports Gemini, K2, and Lava-routed providers."""
 
     def __init__(self, provider: str | None = None, run_logger=None, agent_name: str | None = None):
         self.provider = provider or os.getenv("LLM_PROVIDER", "gemini")
@@ -39,6 +71,11 @@ class LLMClient:
                 raise ValueError("K2_API_KEY not set in environment")
             self.k2_endpoint = "https://api.k2think.ai/v1/chat/completions"
             self.k2_model = "MBZUAI-IFM/K2-Think-v2"
+        elif self.provider in LAVA_MODELS:
+            self.lava_key = os.getenv("LAVA_SECRET_KEY")
+            if not self.lava_key:
+                raise ValueError("LAVA_SECRET_KEY not set in environment")
+            self.lava_config = LAVA_MODELS[self.provider]
         else:
             raise ValueError(f"Unknown LLM provider: {self.provider}")
 
@@ -80,6 +117,8 @@ class LLMClient:
                     error=error_msg,
                 )
 
+    # ── Gemini (direct SDK) ──
+
     async def _generate_gemini(self, system_prompt: str, user_prompt: str) -> dict:
         full_prompt = f"{system_prompt}\n\n{user_prompt}"
         gen_config = genai.GenerationConfig(
@@ -111,6 +150,8 @@ class LLMClient:
                 f"Failed to parse LLM response as JSON: {e}\nRaw response: {response.text[:500]}"
             ) from e
 
+    # ── K2 Think V2 (direct httpx) ──
+
     async def _generate_k2(self, system_prompt: str, user_prompt: str) -> dict:
         payload = {
             "model": self.k2_model,
@@ -140,6 +181,78 @@ class LLMClient:
         content = data["choices"][0]["message"]["content"]
         self._last_raw = content
         return self._extract_json(content)
+
+    # ── Lava gateway: OpenAI-compatible providers (GPT-4o, Kimi) ──
+
+    def _lava_url(self) -> str:
+        return f"{LAVA_ENDPOINT}?u={quote(self.lava_config['provider_url'], safe='')}"
+
+    async def _generate_lava_openai(self, system_prompt: str, user_prompt: str) -> dict:
+        payload = {
+            "model": self.lava_config["model_id"],
+            "messages": [
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt},
+            ],
+            "temperature": 0.2,
+        }
+        headers = {
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {self.lava_key}",
+        }
+
+        name = self.lava_config["name"]
+        try:
+            async with httpx.AsyncClient(timeout=120.0) as client:
+                resp = await client.post(self._lava_url(), json=payload, headers=headers)
+                resp.raise_for_status()
+                data = resp.json()
+        except httpx.HTTPStatusError as e:
+            raise RuntimeError(
+                f"Lava/{name} returned {e.response.status_code}: {e.response.text[:500]}"
+            ) from e
+        except Exception as e:
+            raise RuntimeError(f"Lava/{name} call failed: {e}") from e
+
+        content = data["choices"][0]["message"]["content"]
+        return self._extract_json(content)
+
+    # ── Lava gateway: Anthropic providers (Claude) ──
+
+    async def _generate_lava_anthropic(self, system_prompt: str, user_prompt: str) -> dict:
+        payload = {
+            "model": self.lava_config["model_id"],
+            "max_tokens": 4096,
+            "system": system_prompt,
+            "messages": [
+                {"role": "user", "content": user_prompt},
+            ],
+            "temperature": 0.2,
+        }
+        headers = {
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {self.lava_key}",
+            "anthropic-version": "2023-06-01",
+        }
+
+        name = self.lava_config["name"]
+        try:
+            async with httpx.AsyncClient(timeout=120.0) as client:
+                resp = await client.post(self._lava_url(), json=payload, headers=headers)
+                resp.raise_for_status()
+                data = resp.json()
+        except httpx.HTTPStatusError as e:
+            raise RuntimeError(
+                f"Lava/{name} returned {e.response.status_code}: {e.response.text[:500]}"
+            ) from e
+        except Exception as e:
+            raise RuntimeError(f"Lava/{name} call failed: {e}") from e
+
+        # Anthropic response: { content: [{ type: "text", text: "..." }] }
+        content = data["content"][0]["text"]
+        return self._extract_json(content)
+
+    # ── JSON extraction ──
 
     @staticmethod
     def _extract_json(text: str) -> dict:
