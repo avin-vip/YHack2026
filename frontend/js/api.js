@@ -39,11 +39,14 @@ export async function getAccount(accountId) {
  *   leakage, recovery_actions, email, billing_payload, audit_trail
  * }
  */
-export async function analyzeAccount(accountId) {
+export async function analyzeAccount(accountId, providers = null) {
   try {
-    const res = await fetch(`${API_BASE}/accounts/${accountId}/analyze`, {
+    const opts = {
       method: 'POST',
-    });
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ providers }),
+    };
+    const res = await fetch(`${API_BASE}/accounts/${accountId}/analyze`, opts);
     if (!res.ok) return null;
     return await res.json();
   } catch {
@@ -114,6 +117,7 @@ export function transformAnalysisResult(backendResult) {
       impact: agent.impact,
       evidence: agent.evidence,
       reasoning: agent.reasoning,
+      model: agent.model || null,
     };
   }
 
