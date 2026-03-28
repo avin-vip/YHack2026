@@ -1,0 +1,12 @@
+{
+  "id": "apex-cloud-004",
+  "name": "Apex Cloud",
+  "arr": 56400,
+  "tier": "Starter",
+  "contract_id": "ctr-cuad-0004",
+  "primary_contact": "ops-finance@apexcloud.io",
+  "industry": "Cloud Services",
+  "status": "active",
+  "created_at": "2024-01-01",
+  "region": "APAC"
+}

@@ -1,0 +1,12 @@
+{
+  "id": "summit-ai-005",
+  "name": "Summit AI",
+  "arr": 261000,
+  "tier": "Professional",
+  "contract_id": "ctr-cuad-0005",
+  "primary_contact": "billing@summitatech.io",
+  "industry": "Artificial Intelligence",
+  "status": "active",
+  "created_at": "2024-01-01",
+  "region": "US-WEST"
+}

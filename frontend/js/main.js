@@ -1,12 +1,14 @@
 // ── MAIN ENTRY POINT ──
 // Orchestrates all modules, step functions, keyboard, init.
 
+
 import { state, STEPS, agentData, setAgentData, ACCOUNTS, ACCOUNT_FALLBACK_DATA } from './state.js';
+import { state, STEPS, agentData, setAgentData, AVAILABLE_MODELS, ACCOUNT_FALLBACK_DATA, modelSelections } from './state.js';
 import { healthCheck, analyzeAccount, transformAnalysisResult } from './api.js';
 import { log, setTermState, setTermOut, setConfidence, setStatus, setSB } from './terminals.js';
 import { drawEdges, activateEdge, setNode, resetEdges } from './graph.js';
 import { updateEmail, updateBillingPayload, updateRankedActions, showReport, giveFeedback, exportReport, copyJSON, resetDock } from './dock.js';
-import { openReasoning, closeReasoning, showActionDetail } from './reasoning.js';
+import { openReasoning, closeReasoning, closeModelSelector, showActionDetail } from './reasoning.js';
 import { startResize } from './resize.js';
 import { renderOpsView, setDrillDownHandler } from './ops.js';
 
@@ -329,23 +331,34 @@ async function advance() {
   state.currentStep++;
   updateStepUI();
 
-  // On step 1: try to resolve backend data before running the step
-  if (state.currentStep === 1 && backendPromise) {
-    try {
-      const result = await backendPromise;
-      if (result) {
-        const transformed = transformAnalysisResult(result);
-        if (transformed) {
-          setAgentData(transformed);
-          console.log('[ARIA] Using real backend data');
+  // On step 1: lock model selections and kick off backend fetch (non-blocking)
+  if (state.currentStep === 1) {
+    state.modelsLocked = true;
+    closeModelSelector();
+    // Update node model labels to show locked state
+    ['contract', 'usage', 'billing', 'orch'].forEach(id => {
+      const nmEl = document.getElementById('nm-' + id);
+      if (nmEl) nmEl.classList.add('locked');
+    });
+
+    // Start backend fetch in background — don't block the UI animation
+    if (state.backendUp) {
+      backendPromise = analyzeAccount('acme-ent-90210', { ...modelSelections });
+      backendPromise.then(result => {
+        if (result) {
+          const transformed = transformAnalysisResult(result);
+          if (transformed) {
+            setAgentData(transformed);
+            console.log('[ARIA] Using real backend data');
+          } else {
+            console.warn('[ARIA] Transform returned null — keeping fallback data');
+          }
         } else {
-          console.warn('[ARIA] Transform returned null — keeping fallback data');
+          console.warn('[ARIA] Backend returned null — keeping fallback data');
         }
-      } else {
-        console.warn('[ARIA] Backend returned null — keeping fallback data');
-      }
-    } catch (err) {
-      console.warn('[ARIA] Backend fetch failed — keeping fallback data', err);
+      }).catch(err => {
+        console.warn('[ARIA] Backend fetch failed — keeping fallback data', err);
+      });
     }
   }
 
@@ -373,9 +386,12 @@ function toggleAutoplay() {
 function resetAll() {
   clearTimeout(state.autoTimer);
   state.currentStep = 0;
+  state.modelsLocked = false;
+  backendPromise = null;
   updateStepUI();
   setStatus('STANDBY', '');
   closeReasoning();
+  closeModelSelector();
 
   ['contract', 'usage', 'billing', 'orch'].forEach(id => {
     setTermState(id, 'idle', 'IDLE');
@@ -389,6 +405,13 @@ function resetAll() {
     if (cf) cf.style.width = '0';
     const cv = document.getElementById('cv-' + id);
     if (cv) cv.textContent = '0%';
+    // Reset model label to unlocked state
+    const nmEl = document.getElementById('nm-' + id);
+    if (nmEl) {
+      nmEl.classList.remove('locked');
+      const modelName = AVAILABLE_MODELS.find(m => m.id === modelSelections[id])?.name || '';
+      nmEl.textContent = modelName;
+    }
   });
 
   document.getElementById('idle-overlay').classList.remove('hidden');
@@ -420,6 +443,7 @@ document.addEventListener('keydown', e => {
       closeReasoning();
     }
   }
+  if (e.code === 'Escape') { closeReasoning(); closeModelSelector(); }
 });
 
 // ── CLICK GRAPH NODES ──
@@ -454,4 +478,13 @@ window.addEventListener('load', async () => {
   } else {
     console.log('[ARIA] Backend offline — using fallback data');
   }
+
+  // Initialize model labels on nodes
+  ['contract', 'usage', 'billing', 'orch'].forEach(id => {
+    const nmEl = document.getElementById('nm-' + id);
+    if (nmEl) {
+      const modelName = AVAILABLE_MODELS.find(m => m.id === modelSelections[id])?.name || '';
+      nmEl.textContent = modelName;
+    }
+  });
 });

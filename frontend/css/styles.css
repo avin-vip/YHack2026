@@ -370,6 +370,7 @@ header {
   position: absolute; transform: translate(-50%, -50%);
   text-align: center; pointer-events: all;
   transition: all 0.4s; cursor: pointer;
+  z-index: 15;
 }
 .node-ring {
   width: 78px; height: 78px; border-radius: 50%;
@@ -385,6 +386,15 @@ header {
 }
 .node-emoji { font-size: 24px; line-height: 1; margin-bottom: 2px; }
 .node-id { font-size: 7px; letter-spacing: 0.14em; color: var(--dim); font-weight: 600; }
+.node-model {
+  font-size: 7px; letter-spacing: 0.08em; color: var(--blue);
+  font-weight: 500; margin-top: 2px; height: 11px;
+  opacity: 0.8; transition: all 0.3s; cursor: pointer;
+  white-space: nowrap;
+}
+.node-model:hover { opacity: 1; color: var(--bright); }
+.node-model.locked { color: var(--dim); cursor: default; }
+.node-model.locked:hover { color: var(--dim); }
 .node-val { font-size: 9px; font-weight: 600; color: var(--dim); margin-top: 3px; height: 13px; transition: color 0.3s; }
 
 .node-label:hover .node-ring { border-color: var(--mid); background: var(--ink3); }
@@ -446,6 +456,31 @@ header {
 .rp-val.cool { color: var(--cool); }
 .rp-val.acid { color: var(--acid); }
 .rp-val.amber { color: var(--amber); }
+.rp-val.blue { color: var(--blue); font-weight: 600; }
+
+/* ── MODEL CONTEXT MENU ── */
+.model-ctx {
+  position: absolute; display: none;
+  transform: translateX(-50%);
+  background: var(--ink2); border: 1px solid var(--rule2);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.55), 0 0 0 1px rgba(255,255,255,0.03);
+  z-index: 25; min-width: 160px;
+  padding: 4px 0;
+}
+.model-ctx.open { display: block; }
+.model-ctx-item {
+  display: flex; align-items: center; gap: 8px;
+  padding: 7px 14px; cursor: pointer;
+  transition: background 0.1s;
+  white-space: nowrap;
+}
+.model-ctx-item:hover { background: var(--ink4); }
+.model-ctx-item.selected { background: var(--blue-dim); }
+.model-ctx-radio { font-size: 12px; color: var(--dim); flex-shrink: 0; }
+.model-ctx-item.selected .model-ctx-radio { color: var(--blue); }
+.model-ctx-name { font-size: 10px; font-weight: 600; color: var(--text); letter-spacing: 0.04em; }
+.model-ctx-item.selected .model-ctx-name { color: var(--blue); }
+.model-ctx-item:hover .model-ctx-name { color: var(--bright); }
 
 .confidence-meter {
   display: flex; align-items: center; gap: 8px; margin-top: 4px;
@@ -505,8 +540,9 @@ header {
   position: absolute; inset: 0;
   display: flex; flex-direction: column; align-items: center; justify-content: center;
   gap: 18px; z-index: 8; transition: opacity 0.4s;
+  pointer-events: none;
 }
-#idle-overlay.hidden { opacity: 0; pointer-events: none; }
+#idle-overlay.hidden { opacity: 0; }
 .idle-hex { font-family: var(--display); font-size: 80px; color: var(--rule2); letter-spacing: 0.06em; line-height: 1; }
 .idle-msg { font-size: 11px; color: var(--dim); letter-spacing: 0.22em; text-transform: uppercase; }
 .idle-key { display: flex; align-items: center; gap: 12px; font-size: 9px; color: var(--dim); }

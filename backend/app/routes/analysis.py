@@ -1,9 +1,12 @@
 import asyncio
 import json
 from pathlib import Path
+from typing import Optional
 
 from fastapi import APIRouter, HTTPException
+from pydantic import BaseModel
 
+from app.agents.llm import AVAILABLE_MODELS
 from app.services.pipeline import run_analysis
 
 router = APIRouter()
@@ -11,11 +14,20 @@ router = APIRouter()
 DATA_DIR = Path(__file__).parent.parent.parent / "data"
 
 
+class AnalyzeRequest(BaseModel):
+    providers: Optional[dict[str, str]] = None
+
+
 @router.post("/accounts/{account_id}/analyze")
-async def analyze_account(account_id: str):
-    """Run the full 4-agent analysis pipeline for an account."""
+async def analyze_account(account_id: str, request: Optional[AnalyzeRequest] = None):
+    """Run the full 4-agent analysis pipeline for an account.
+
+    Optionally accepts per-agent provider overrides in the request body:
+    { "providers": { "contract": "gemini", "usage": "k2", ... } }
+    """
     try:
-        result = await run_analysis(account_id)
+        providers = request.providers if request else None
+        result = await run_analysis(account_id, providers=providers)
         return result
     except FileNotFoundError as e:
         raise HTTPException(status_code=404, detail=str(e))
@@ -67,3 +79,7 @@ async def batch_analyze():
         },
         "results": results,
     }
+@router.get("/models")
+async def get_available_models():
+    """Return the list of available LLM providers."""
+    return {"models": AVAILABLE_MODELS}

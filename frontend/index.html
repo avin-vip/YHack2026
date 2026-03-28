@@ -160,24 +160,34 @@
           <div class="corner bl"></div><div class="corner br"></div>
 
           <svg id="graph-svg" xmlns="http://www.w3.org/2000/svg"></svg>
-
+          
           <!-- Nodes -->
           <div class="node-label" id="node-contract" style="left:50%;top:20%">
             <div class="node-ring"><div class="node-emoji">📋</div><div class="node-id">CONTRACT</div></div>
+            <div class="node-model" id="nm-contract"></div>
             <div class="node-val" id="nv-contract"></div>
           </div>
           <div class="node-label" id="node-usage" style="left:27%;top:54%">
             <div class="node-ring"><div class="node-emoji">📊</div><div class="node-id">USAGE</div></div>
+            <div class="node-model" id="nm-usage"></div>
             <div class="node-val" id="nv-usage"></div>
           </div>
           <div class="node-label" id="node-billing" style="left:73%;top:54%">
             <div class="node-ring"><div class="node-emoji">💳</div><div class="node-id">BILLING</div></div>
+            <div class="node-model" id="nm-billing"></div>
             <div class="node-val" id="nv-billing"></div>
           </div>
           <div class="node-label" id="node-orch" style="left:50%;top:81%">
-            <div class="node-ring" style="width:92px;height:92px"><div class="node-emoji" style="font-size:28px">🎯</div><div class="node-id">ORCHESTRATOR</div></div>
+            <div class="node-ring" style="width:92px;height:92px">
+              <div class="node-emoji" style="font-size:28px">🎯</div>
+              <div class="node-id">ORCHESTRATOR</div>
+            </div>
+            <div class="node-model" id="nm-orch"></div>
             <div class="node-val" id="nv-orch"></div>
           </div>
+
+          <!-- Model context menu -->
+          <div class="model-ctx" id="modelCtx"></div>
 
           <!-- Leakage overlay -->
           <div id="leakage-overlay">
@@ -216,6 +226,17 @@
               <span class="key-badge">▶ BEGIN</span>
               <span style="color:var(--dim)">to deploy</span>
             </div>
+        <div id="idle-overlay">
+          <div class="idle-hex">ARIA</div>
+          <div class="idle-msg">4 agents standing by</div>
+          <div class="idle-key">
+            <span style="color:var(--mid);font-size:9px;letter-spacing:0.08em">CLICK NODES TO SELECT MODELS</span>
+          </div>
+          <div class="idle-key" style="margin-top:6px">
+            <span class="key-badge">SPACE</span>
+            <span style="color:var(--dim)">or</span>
+            <span class="key-badge">▶ BEGIN</span>
+            <span style="color:var(--dim)">to deploy</span>
           </div>
         </div>
       </div>

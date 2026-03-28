@@ -1,7 +1,95 @@
 // ── REASONING OVERLAY PANEL ──
-import { agentData } from './state.js';
+import { agentData, AVAILABLE_MODELS, modelSelections, state } from './state.js';
+
+const AGENT_NAMES = {
+  contract: 'Contract Analyst',
+  usage: 'Usage Validator',
+  billing: 'Billing Auditor',
+  orch: 'Orchestrator',
+};
+
+export function openModelSelector(id) {
+  const ctx = document.getElementById('modelCtx');
+  const nodeEl = document.getElementById('node-' + id);
+  if (!ctx || !nodeEl) return;
+
+  const currentModel = modelSelections[id];
+
+  ctx.innerHTML = AVAILABLE_MODELS.map(m => `
+    <div class="model-ctx-item${m.id === currentModel ? ' selected' : ''}"
+         data-model-id="${m.id}" data-agent-id="${id}">
+      <span class="model-ctx-radio">${m.id === currentModel ? '◉' : '○'}</span>
+      <span class="model-ctx-name">${m.name}</span>
+    </div>
+  `).join('');
+
+  // Position near the node
+  const area = document.getElementById('graphArea');
+  const areaRect = area.getBoundingClientRect();
+  const nodeRect = nodeEl.getBoundingClientRect();
+  let left = nodeRect.left - areaRect.left + nodeRect.width / 2;
+  let top = nodeRect.bottom - areaRect.top + 6;
+
+  ctx.style.left = left + 'px';
+  ctx.style.top = top + 'px';
+  ctx.classList.add('open');
+
+  // Clamp to stay inside graph area after rendering
+  requestAnimationFrame(() => {
+    const ctxRect = ctx.getBoundingClientRect();
+    if (ctxRect.right > areaRect.right - 8) {
+      left -= (ctxRect.right - areaRect.right + 8);
+      ctx.style.left = left + 'px';
+    }
+    if (ctxRect.left < areaRect.left + 8) {
+      ctx.style.left = '8px';
+    }
+    if (ctxRect.bottom > areaRect.bottom - 8) {
+      // Flip above the node
+      ctx.style.top = (nodeRect.top - areaRect.top - ctxRect.height - 6) + 'px';
+    }
+  });
+
+  // Attach click handlers
+  ctx.querySelectorAll('.model-ctx-item').forEach(el => {
+    el.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const modelId = el.dataset.modelId;
+      const agentId = el.dataset.agentId;
+      modelSelections[agentId] = modelId;
+      const modelName = AVAILABLE_MODELS.find(m => m.id === modelId)?.name || modelId;
+      const nmEl = document.getElementById('nm-' + agentId);
+      if (nmEl) nmEl.textContent = modelName;
+      closeModelSelector();
+    });
+  });
+
+  // Close on outside click (deferred so this click doesn't immediately close it)
+  setTimeout(() => {
+    document.addEventListener('click', _closeCtxOnOutsideClick);
+  }, 0);
+}
+
+function _closeCtxOnOutsideClick(e) {
+  const ctx = document.getElementById('modelCtx');
+  if (ctx && !ctx.contains(e.target)) {
+    closeModelSelector();
+  }
+}
+
+export function closeModelSelector() {
+  const ctx = document.getElementById('modelCtx');
+  if (ctx) ctx.classList.remove('open');
+  document.removeEventListener('click', _closeCtxOnOutsideClick);
+}
 
 export function openReasoning(id) {
+  // Before run: show model selector
+  if (!state.modelsLocked) {
+    openModelSelector(id);
+    return;
+  }
+
   const d = agentData[id];
   if (!d || !d.confidence) return;
 
@@ -10,12 +98,14 @@ export function openReasoning(id) {
 
   const score = (d.confidence * (d.impact / 1000)).toFixed(1);
   const confColor = d.confidence > 0.9 ? '#3ecfaa' : d.confidence > 0.8 ? '#d9870f' : '#e84040';
+  const modelName = d.model || AVAILABLE_MODELS.find(m => m.id === modelSelections[id])?.name || 'Unknown';
 
   let html = `
     <div class="rp-section">
       <div class="rp-section-title">AGENT IDENTITY</div>
       <div class="rp-row"><span class="rp-key">ROLE</span><span class="rp-val acid">${d.role}</span></div>
       <div class="rp-row"><span class="rp-key">INPUT</span><span class="rp-val">${d.input}</span></div>
+      <div class="rp-row"><span class="rp-key">MODEL</span><span class="rp-val blue">${modelName}</span></div>
     </div>
     <div class="rp-section">
       <div class="rp-section-title">CONFIDENCE & IMPACT</div>

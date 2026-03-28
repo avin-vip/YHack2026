@@ -1,0 +1,17 @@
+{
+  "tier_id": "starter",
+  "name": "Starter",
+  "base_fee": 5000,
+  "usage_limit": 1000,
+  "usage_unit": "API calls",
+  "overage_rate": 0.10,
+  "unit_multiplier": 100,
+  "billing_cycle": "monthly",
+  "discount_eligible": true,
+  "max_discount_rate": 0.15,
+  "features": [
+    "Email support",
+    "SLA 99.5%",
+    "Standard API access"
+  ]
+}
