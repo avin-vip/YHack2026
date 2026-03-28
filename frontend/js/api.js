@@ -77,6 +77,33 @@ export async function executeRecovery({ accountId, actionName, amount, invoiceId
 }
 
 /**
+ * List all accounts.
+ */
+export async function listAccounts() {
+  try {
+    const res = await fetch(`${API_BASE}/accounts`);
+    if (!res.ok) return null;
+    const data = await res.json();
+    return data.accounts || [];
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Run batch analysis on all accounts in parallel.
+ */
+export async function batchAnalyze() {
+  try {
+    const res = await fetch(`${API_BASE}/batch-analyze`, { method: 'POST' });
+    if (!res.ok) return null;
+    return await res.json();
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Get audit trail for an account.
  */
 export async function getAuditTrail(accountId) {

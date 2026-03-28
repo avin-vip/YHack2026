@@ -1,0 +1,36 @@
+{
+  "id": "ctr-11223",
+  "account_id": "titan-saas-77450",
+  "effective_date": "2022-09-15",
+  "expiration_date": "2025-09-14",
+  "term_months": 36,
+  "pricing_tier": "Enterprise Plus",
+  "base_fee_monthly": 125000,
+  "usage_limit_monthly": 25000,
+  "usage_unit": "API calls",
+  "overage_rate_per_unit": 0.04,
+  "unit_multiplier": 1000,
+  "discount": {
+    "rate": 0.20,
+    "scope": "base_only",
+    "clause": "§11.2",
+    "description": "20% discount applies to base charges only"
+  },
+  "clauses": {
+    "overage": {
+      "section": "§4.1",
+      "text": "Overage rate: $0.04 per unit above monthly limit of 25,000 units. Charged at end of billing cycle."
+    },
+    "base_limit": {
+      "section": "§6.3",
+      "text": "Base usage limit: 25,000 units per month. Measured as individual API transactions across all service tiers."
+    },
+    "discount_scope": {
+      "section": "§11.2",
+      "text": "Volume discount of 20% applies exclusively to base subscription charges. All overage and ancillary charges are billed at full rate."
+    }
+  },
+  "total_pages": 32,
+  "signed_by": "R. Patel, VP Operations",
+  "status": "active"
+}

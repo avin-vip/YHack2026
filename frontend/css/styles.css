@@ -693,3 +693,361 @@ header {
   opacity: 0; transition: opacity 0.15s;
 }
 .tooltip.show { opacity: 1; }
+
+/* ══════════════════════════════════════════════════
+   OPS VIEW — MULTI-ACCOUNT GRID
+   ══════════════════════════════════════════════════ */
+
+.ops-container {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+.ops-view {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: var(--ink);
+}
+
+/* ── Mode toggle ── */
+.mode-toggle { border-left: 1px solid var(--rule); border-right: 1px solid var(--rule); }
+
+.back-btn {
+  font-size: 9px;
+  padding: 5px 12px;
+}
+
+/* ── Detail view wrapper ── */
+.detail-view {
+  display: flex;
+  width: 100%;
+  height: 100%;
+}
+
+/* ── Ops header with metrics bar ── */
+.ops-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 24px;
+  border-bottom: 1px solid var(--rule);
+  background: rgba(14,14,24,0.6);
+  flex-shrink: 0;
+}
+
+.ops-metrics {
+  display: flex;
+  align-items: center;
+  gap: 0;
+}
+
+.ops-metric {
+  padding: 0 20px;
+}
+.ops-metric:first-child { padding-left: 0; }
+
+.ops-metric-label {
+  font-size: 8px;
+  letter-spacing: 0.16em;
+  color: var(--dim);
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.ops-metric-value {
+  font-family: var(--display);
+  font-size: 28px;
+  color: var(--bright);
+  line-height: 1;
+}
+.ops-metric-value.hot {
+  color: var(--hot);
+  text-shadow: 0 0 18px var(--hot-glow);
+}
+
+.ops-metric-sep {
+  width: 1px;
+  height: 32px;
+  background: var(--rule2);
+  flex-shrink: 0;
+}
+
+.ops-analyze-btn {
+  font-size: 11px;
+  padding: 10px 24px;
+}
+.ops-analyze-btn.done {
+  background: var(--cool);
+  border-color: var(--cool);
+  color: var(--ink);
+  font-weight: 700;
+}
+.ops-analyze-btn.done:hover {
+  background: #52dbb8;
+  box-shadow: 0 0 22px var(--cool-glow);
+}
+
+/* ── Grid ── */
+.ops-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 16px;
+  padding: 20px 24px;
+  flex: 1;
+  overflow-y: auto;
+  align-content: start;
+}
+.ops-grid::-webkit-scrollbar { width: 2px; }
+.ops-grid::-webkit-scrollbar-thumb { background: var(--rule2); }
+
+/* ── Card ── */
+.ops-card {
+  background: var(--ink2);
+  border: 1px solid var(--rule);
+  display: flex;
+  flex-direction: column;
+  transition: all 0.3s;
+  position: relative;
+  overflow: hidden;
+}
+
+.ops-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--rule2);
+  transition: all 0.4s;
+}
+
+.ops-card.analyzing::before {
+  background: var(--amber);
+  box-shadow: 0 0 12px var(--amber-glow);
+  animation: flash 1.2s infinite;
+}
+
+.ops-card.complete::before {
+  background: var(--cool);
+  box-shadow: 0 0 8px var(--cool-glow);
+}
+
+.ops-card.complete {
+  cursor: pointer;
+}
+.ops-card.complete:hover {
+  border-color: var(--cool);
+  box-shadow: 0 0 24px rgba(62,207,170,0.08);
+}
+
+.ops-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--rule);
+}
+
+.ops-card-name {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: var(--bright);
+}
+
+.ops-card-status {
+  font-size: 8px;
+  letter-spacing: 0.12em;
+  font-weight: 700;
+  color: var(--dim);
+  padding: 2px 8px;
+  background: var(--ink4);
+  border: 1px solid var(--rule2);
+}
+.ops-card-status.working {
+  color: var(--amber);
+  background: var(--amber-dim);
+  border-color: var(--amber);
+  animation: flash 1.2s infinite;
+}
+.ops-card-status.done {
+  color: var(--cool);
+  background: var(--cool-dim);
+  border-color: var(--cool);
+  animation: none;
+}
+
+.ops-card-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 16px;
+  font-size: 9px;
+  color: var(--dim);
+  letter-spacing: 0.06em;
+  border-bottom: 1px solid var(--rule);
+}
+.ops-card-arr {
+  color: var(--text);
+  font-weight: 600;
+}
+
+/* ── Mini pipeline visualization ── */
+.ops-card-pipeline {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  padding: 18px 16px;
+}
+
+.ops-node {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 1.5px solid var(--rule2);
+  background: var(--ink3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--dim);
+  transition: all 0.4s;
+  flex-shrink: 0;
+  position: relative;
+}
+
+.ops-node.working {
+  border-color: var(--amber);
+  color: var(--amber);
+  box-shadow: 0 0 14px var(--amber-dim);
+  animation: flash 0.8s infinite;
+}
+
+.ops-node.complete {
+  border-color: var(--cool);
+  color: var(--cool);
+  box-shadow: 0 0 10px var(--cool-glow);
+  animation: none;
+}
+
+.ops-node-orch {
+  width: 38px;
+  height: 38px;
+}
+
+.ops-edge {
+  width: 24px;
+  height: 1.5px;
+  background: var(--rule2);
+  flex-shrink: 0;
+  transition: all 0.4s;
+  position: relative;
+}
+
+.ops-edge.active {
+  background: var(--acid);
+  box-shadow: 0 0 6px var(--acid-glow);
+}
+
+/* ── Card result area ── */
+.ops-card-result {
+  padding: 14px 16px;
+  min-height: 60px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ops-result-placeholder {
+  font-size: 9px;
+  color: var(--dim);
+  letter-spacing: 0.08em;
+}
+
+.ops-result-leakage {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.ops-result-label {
+  font-size: 8px;
+  letter-spacing: 0.14em;
+  color: var(--dim);
+  font-weight: 600;
+}
+
+.ops-result-amount {
+  font-family: var(--display);
+  font-size: 36px;
+  color: var(--hot);
+  line-height: 1;
+  text-shadow: 0 0 24px var(--hot-glow);
+  transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.ops-result-amount.slam {
+  animation: slamIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes slamIn {
+  0% { transform: scale(0.3); opacity: 0; }
+  60% { transform: scale(1.15); opacity: 1; }
+  100% { transform: scale(1); }
+}
+
+.ops-result-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.ops-result-conf {
+  font-size: 9px;
+  color: var(--cool);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+}
+
+.ops-result-urgency {
+  font-size: 7px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  padding: 2px 8px;
+  border: 1px solid;
+}
+.ops-result-urgency.high {
+  color: var(--hot);
+  background: var(--hot-dim);
+  border-color: var(--hot);
+}
+.ops-result-urgency.medium {
+  color: var(--amber);
+  background: var(--amber-dim);
+  border-color: var(--amber);
+}
+.ops-result-urgency.low {
+  color: var(--dim);
+  background: var(--ink4);
+  border-color: var(--rule2);
+}
+
+/* ── Ops footer ── */
+.ops-footer {
+  padding: 8px 24px;
+  border-top: 1px solid var(--rule);
+  background: rgba(14,14,24,0.6);
+  flex-shrink: 0;
+}
+
+.ops-footer-text {
+  font-size: 9px;
+  color: var(--dim);
+  letter-spacing: 0.1em;
+}

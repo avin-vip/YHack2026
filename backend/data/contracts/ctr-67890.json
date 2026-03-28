@@ -1,0 +1,36 @@
+{
+  "id": "ctr-67890",
+  "account_id": "nexus-corp-40120",
+  "effective_date": "2023-06-01",
+  "expiration_date": "2025-05-31",
+  "term_months": 24,
+  "pricing_tier": "Enterprise",
+  "base_fee_monthly": 42000,
+  "usage_limit_monthly": 5000,
+  "usage_unit": "API calls",
+  "overage_rate_per_unit": 0.08,
+  "unit_multiplier": 1000,
+  "discount": {
+    "rate": 0.15,
+    "scope": "base_only",
+    "clause": "§9.1",
+    "description": "15% discount applies to base charges only"
+  },
+  "clauses": {
+    "overage": {
+      "section": "§3.4",
+      "text": "Overage rate: $0.08 per unit above monthly limit of 5,000 units. Overage charges invoiced as a separate line item on the monthly bill."
+    },
+    "base_limit": {
+      "section": "§5.2",
+      "text": "Base usage limit: 5,000 units per month. Units measured as individual API transactions."
+    },
+    "discount_scope": {
+      "section": "§9.1",
+      "text": "Discounts apply to base subscription fees only. Overage, add-on, and professional services charges are excluded from discount programs."
+    }
+  },
+  "total_pages": 18,
+  "signed_by": "M. Chen, CFO",
+  "status": "active"
+}
