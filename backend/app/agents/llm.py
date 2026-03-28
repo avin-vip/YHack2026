@@ -2,6 +2,7 @@ import os
 import json
 import re
 import asyncio
+import time
 
 import google.generativeai as genai
 import httpx
@@ -18,8 +19,11 @@ AVAILABLE_MODELS = {
 class LLMClient:
     """LLM client abstraction. Supports Gemini and K2 Think V2."""
 
-    def __init__(self, provider: str | None = None):
+    def __init__(self, provider: str | None = None, run_logger=None, agent_name: str | None = None):
         self.provider = provider or os.getenv("LLM_PROVIDER", "gemini")
+        self.run_logger = run_logger
+        self.agent_name = agent_name
+        self._last_raw: str | None = None
         self._init_provider()
 
     def _init_provider(self):
@@ -44,11 +48,37 @@ class LLMClient:
 
     async def generate(self, system_prompt: str, user_prompt: str) -> dict:
         """Send a prompt to the LLM and return parsed JSON response."""
-        if self.provider == "gemini":
-            return await self._generate_gemini(system_prompt, user_prompt)
-        if self.provider == "k2":
-            return await self._generate_k2(system_prompt, user_prompt)
-        raise ValueError(f"Provider {self.provider} not implemented")
+        self._last_raw = None
+        start = time.time()
+        error_msg = None
+        result = None
+
+        try:
+            if self.provider == "gemini":
+                result = await self._generate_gemini(system_prompt, user_prompt)
+            elif self.provider == "k2":
+                result = await self._generate_k2(system_prompt, user_prompt)
+            else:
+                raise ValueError(f"Provider {self.provider} not implemented")
+            return result
+        except Exception as e:
+            error_msg = str(e)
+            raise
+        finally:
+            if self.run_logger:
+                latency_ms = round((time.time() - start) * 1000)
+                self.run_logger.log_call(
+                    agent=self.agent_name or "unknown",
+                    provider=self.provider,
+                    model=self.model_name,
+                    system_prompt=system_prompt,
+                    user_prompt=user_prompt,
+                    raw_response=self._last_raw,
+                    parsed_response=result,
+                    latency_ms=latency_ms,
+                    success=error_msg is None,
+                    error=error_msg,
+                )
 
     async def _generate_gemini(self, system_prompt: str, user_prompt: str) -> dict:
         full_prompt = f"{system_prompt}\n\n{user_prompt}"
@@ -71,6 +101,8 @@ class LLMClient:
                 )
         except Exception as e:
             raise RuntimeError(f"Gemini API call failed: {e}") from e
+
+        self._last_raw = response.text
 
         try:
             return json.loads(response.text)
@@ -106,6 +138,7 @@ class LLMClient:
             raise RuntimeError(f"K2 API call failed: {e}") from e
 
         content = data["choices"][0]["message"]["content"]
+        self._last_raw = content
         return self._extract_json(content)
 
     @staticmethod
