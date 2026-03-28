@@ -1,0 +1,40 @@
+{
+  "id": "inv-2024-504",
+  "account_id": "apex-cloud-004",
+  "contract_id": "ctr-cuad-0004",
+  "billing_period": "2024-10",
+  "issued_date": "2024-11-01",
+  "due_date": "2024-12-01",
+  "line_items": [
+    {
+      "id": "li-001",
+      "description": "Starter - Base Fee",
+      "quantity": 1,
+      "unit_price": 4175,
+      "discount_rate": 0.06,
+      "amount": 3924,
+      "type": "base",
+      "note": "6% discount applied"
+    },
+    {
+      "id": "li-002",
+      "description": "Overage Charges",
+      "quantity": 0,
+      "unit_price": 0,
+      "discount_rate": 0.0,
+      "amount": 0.0,
+      "type": "overage",
+      "note": "No overage recorded"
+    }
+  ],
+  "subtotal": 3924.0,
+  "discount_applied": {
+    "rate": 0.06,
+    "applied_to": "base_only",
+    "note": "6% discount applied"
+  },
+  "total": 3924.0,
+  "currency": "USD",
+  "status": "issued",
+  "payment_status": "paid"
+}

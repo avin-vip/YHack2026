@@ -1,0 +1,40 @@
+{
+  "id": "inv-2024-506",
+  "account_id": "harbor-logistics-006",
+  "contract_id": "ctr-cuad-0006",
+  "billing_period": "2024-10",
+  "issued_date": "2024-11-01",
+  "due_date": "2024-12-01",
+  "line_items": [
+    {
+      "id": "li-001",
+      "description": "Enterprise - Base Fee",
+      "quantity": 1,
+      "unit_price": 50000,
+      "discount_rate": 0.18,
+      "amount": 41000,
+      "type": "base",
+      "note": "Discount applied to all charges including overage"
+    },
+    {
+      "id": "li-002",
+      "description": "Overage Charges",
+      "quantity": 1089,
+      "unit_price": 0.06,
+      "discount_rate": 0.18,
+      "amount": 40184.1,
+      "type": "overage",
+      "note": "Overage with 18% discount applied"
+    }
+  ],
+  "subtotal": 81184.1,
+  "discount_applied": {
+    "rate": 0.18,
+    "applied_to": "all_charges",
+    "note": "Discount applied to all charges including overage"
+  },
+  "total": 81184.1,
+  "currency": "USD",
+  "status": "issued",
+  "payment_status": "paid"
+}

@@ -1,0 +1,51 @@
+{
+  "id": "ctr-cuad-0001",
+  "account_id": "vertex-systems-001",
+  "effective_date": "2024-01-01",
+  "expiration_date": "2025-12-31",
+  "term_months": 24,
+  "pricing_tier": "Professional",
+  "base_fee_monthly": 25000,
+  "usage_limit_monthly": 5000,
+  "usage_unit": "API calls",
+  "overage_rate_per_unit": 0.08,
+  "unit_multiplier": 500,
+  "discount": {
+    "rate": 0.1,
+    "scope": "base_only",
+    "clause": "\u00a712.3",
+    "description": "10% discount applies to base charges only"
+  },
+  "clauses": {
+    "overage": {
+      "section": "\u00a74.2",
+      "text": "Overage rate: $0.08 per unit above monthly limit of 5,000 units. Overage charges are calculated at the end of each billing cycle."
+    },
+    "base_limit": {
+      "section": "\u00a77.1",
+      "text": "Base usage limit: 5,000 units per month. Units are measured as individual API calls aggregated across all endpoints."
+    },
+    "discount_scope": {
+      "section": "\u00a712.3",
+      "text": "Discounts apply to base charges only, not overage or add-on charges. Any discount applied beyond base charges is a billing error and subject to correction."
+    },
+    "termination": {
+      "section": "\u00a79.1",
+      "text": "Either party may terminate with 30 days written notice."
+    },
+    "payment": {
+      "section": "\u00a75.2",
+      "text": "Payment due within 30 days of invoice date."
+    },
+    "governing_law": {
+      "section": "\u00a714.1",
+      "text": "This Agreement is governed by English law and the parties submit to the exclusive jurisdiction of the English courts in  relation to any dispute (contractual or non-contractual) concerning this Agreement save that either party may apply to any court for an  injunction or other relief to protect its Intellectual Property Rights."
+    }
+  },
+  "legal_terms": {
+    "governing_law": "This Agreement is governed by English law and the parties submit to the exclusive jurisdiction of the English courts in  relation to any dispute (contractual or non-contractual) concerning this Agreement save that either party may apply to any court for an  injunction or other relief to protect its Intellectual Property Rights."
+  },
+  "total_pages": 19,
+  "signed_by": "CFO, Vertex Systems",
+  "status": "active"
+}

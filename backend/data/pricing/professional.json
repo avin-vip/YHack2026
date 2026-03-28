@@ -1,0 +1,18 @@
+{
+  "tier_id": "professional",
+  "name": "Professional",
+  "base_fee": 25000,
+  "usage_limit": 5000,
+  "usage_unit": "API calls",
+  "overage_rate": 0.08,
+  "unit_multiplier": 500,
+  "billing_cycle": "monthly",
+  "discount_eligible": true,
+  "max_discount_rate": 0.20,
+  "features": [
+    "Priority support",
+    "SLA 99.9%",
+    "Advanced analytics",
+    "Webhooks"
+  ]
+}

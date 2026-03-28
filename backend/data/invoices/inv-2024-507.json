@@ -1,0 +1,40 @@
+{
+  "id": "inv-2024-507",
+  "account_id": "catalyst-health-007",
+  "contract_id": "ctr-cuad-0007",
+  "billing_period": "2024-10",
+  "issued_date": "2024-11-01",
+  "due_date": "2024-12-01",
+  "line_items": [
+    {
+      "id": "li-001",
+      "description": "Enterprise Plus - Base Fee",
+      "quantity": 1,
+      "unit_price": 85000,
+      "discount_rate": 0.07,
+      "amount": 79050,
+      "type": "base",
+      "note": "7% discount applied to base charges only"
+    },
+    {
+      "id": "li-002",
+      "description": "Overage Charges",
+      "quantity": 0,
+      "unit_price": 0,
+      "discount_rate": 0.0,
+      "amount": 0.0,
+      "type": "overage",
+      "note": "No overage recorded"
+    }
+  ],
+  "subtotal": 79050.0,
+  "discount_applied": {
+    "rate": 0.07,
+    "applied_to": "base_only",
+    "note": "7% discount applied to base charges only"
+  },
+  "total": 79050.0,
+  "currency": "USD",
+  "status": "issued",
+  "payment_status": "paid"
+}

@@ -1,0 +1,52 @@
+{
+  "id": "ctr-cuad-0007",
+  "account_id": "catalyst-health-007",
+  "effective_date": "2024-01-01",
+  "expiration_date": "2025-12-31",
+  "term_months": 24,
+  "pricing_tier": "Enterprise Plus",
+  "base_fee_monthly": 85000,
+  "usage_limit_monthly": 10000,
+  "usage_unit": "API calls",
+  "overage_rate_per_unit": 0.05,
+  "unit_multiplier": 1000,
+  "discount": {
+    "rate": 0.07,
+    "scope": "base_only",
+    "clause": "\u00a712.3",
+    "description": "7% discount applies to base charges only"
+  },
+  "clauses": {
+    "overage": {
+      "section": "\u00a74.2",
+      "text": "Overage rate: $0.05 per unit above monthly limit of 10,000 units. Overage charges are calculated at the end of each billing cycle."
+    },
+    "base_limit": {
+      "section": "\u00a77.1",
+      "text": "Base usage limit: 10,000 units per month. Units are measured as individual API calls aggregated across all endpoints."
+    },
+    "discount_scope": {
+      "section": "\u00a712.3",
+      "text": "Discounts apply to base charges only, not overage or add-on charges. Any discount applied beyond base charges is a billing error and subject to correction."
+    },
+    "termination": {
+      "section": "\u00a79.1",
+      "text": "Either party may terminate with 60 days written notice."
+    },
+    "payment": {
+      "section": "\u00a75.2",
+      "text": "Payment due within 30 days of invoice date."
+    },
+    "governing_law": {
+      "section": "\u00a714.1",
+      "text": "This Agreement shall be construed and enforced and interpreted in accordance with and governed by the laws of the Commonwealth of Massachusetts without reference to principles of conflicts of law."
+    }
+  },
+  "legal_terms": {
+    "governing_law": "This Agreement shall be construed and enforced and interpreted in accordance with and governed by the laws of the Commonwealth of Massachusetts without reference to principles of conflicts of law.",
+    "termination_notice": "This Agreement may be terminated at any time, without the payment of any penalty, with respect to any series or the Trust, by the Board of Trustees of the Trust, or by the Sponsor, in each case on not less than 60 days' written notice to the other party."
+  },
+  "total_pages": 28,
+  "signed_by": "CFO, Catalyst Health",
+  "status": "active"
+}
