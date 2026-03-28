@@ -85,3 +85,58 @@ export async function getAuditTrail(accountId) {
     return null;
   }
 }
+
+/**
+ * Transform a backend analysis response into the frontend agentData format.
+ *
+ * Backend shape:
+ *   { agents: { contract, usage, billing, orchestrator }, leakage, recovery_actions, email, billing_payload }
+ *   Each agent: { role, input_description, output, confidence, evidence, reasoning, logs, impact }
+ *
+ * Frontend shape (per agent):
+ *   { role, input (string), output (dict), confidence, impact (number), evidence (array), reasoning (array) }
+ *
+ * Mapping:
+ *   - input_description → input
+ *   - agents.orchestrator → orch
+ *   - recovery_actions, email, billing_payload stored on orch
+ */
+export function transformAnalysisResult(backendResult) {
+  if (!backendResult || !backendResult.agents) return null;
+
+  function transformAgent(agent) {
+    if (!agent) return null;
+    return {
+      role: agent.role,
+      input: agent.input_description,
+      output: agent.output,
+      confidence: agent.confidence,
+      impact: agent.impact,
+      evidence: agent.evidence,
+      reasoning: agent.reasoning,
+    };
+  }
+
+  const result = {};
+
+  // Transform standard agents (contract, usage, billing)
+  for (const key of ['contract', 'usage', 'billing']) {
+    if (backendResult.agents[key]) {
+      result[key] = transformAgent(backendResult.agents[key]);
+    }
+  }
+
+  // Map orchestrator → orch, and attach top-level recovery fields
+  if (backendResult.agents.orchestrator) {
+    result.orch = transformAgent(backendResult.agents.orchestrator);
+  }
+
+  // Store recovery-related data on the orch agent
+  if (result.orch) {
+    result.orch.recovery_actions = backendResult.recovery_actions || [];
+    result.orch.email = backendResult.email || {};
+    result.orch.billing_payload = backendResult.billing_payload || {};
+  }
+
+  return result;
+}

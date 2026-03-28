@@ -91,3 +91,45 @@ BILLING AUDITOR OUTPUT:
 
 Calculate net leakage, rank recovery actions, draft a recovery email, and generate a billing correction payload.
 The email should reference specific contract sections and be addressed to the account's finance team."""
+
+    async def run(self, data: dict) -> dict:
+        """Override base run() to also extract recovery_actions, email, and billing_payload."""
+        self.logs = []
+        self._log(f"Initializing {self.role}...")
+
+        system_prompt = self.get_system_prompt()
+        user_prompt = self.build_user_prompt(data)
+
+        self._log("Sending to LLM for analysis...")
+        try:
+            response = await self.llm.generate(system_prompt, user_prompt)
+        except Exception as e:
+            self._log(f"LLM call failed: {e}", "red")
+            return {
+                "role": self.role,
+                "input_description": data.get("input_description", ""),
+                "output": {},
+                "confidence": 0.0,
+                "evidence": [],
+                "reasoning": [],
+                "recovery_actions": [],
+                "email": {},
+                "billing_payload": {},
+                "error": str(e),
+                "logs": self.logs,
+            }
+
+        self._log("Analysis complete", "acid")
+
+        return {
+            "role": self.role,
+            "input_description": data.get("input_description", ""),
+            "output": response.get("output", {}),
+            "confidence": response.get("confidence", 0.0),
+            "evidence": response.get("evidence", []),
+            "reasoning": response.get("reasoning", []),
+            "recovery_actions": response.get("recovery_actions", []),
+            "email": response.get("email", {}),
+            "billing_payload": response.get("billing_payload", {}),
+            "logs": self.logs,
+        }

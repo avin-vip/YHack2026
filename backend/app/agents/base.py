@@ -35,7 +35,20 @@ class BaseAgent(ABC):
         user_prompt = self.build_user_prompt(data)
 
         self._log("Sending to LLM for analysis...")
-        response = await self.llm.generate(system_prompt, user_prompt)
+        try:
+            response = await self.llm.generate(system_prompt, user_prompt)
+        except Exception as e:
+            self._log(f"LLM call failed: {e}", "red")
+            return {
+                "role": self.role,
+                "input_description": data.get("input_description", ""),
+                "output": {},
+                "confidence": 0.0,
+                "evidence": [],
+                "reasoning": [],
+                "error": str(e),
+                "logs": self.logs,
+            }
 
         self._log("Analysis complete", "acid")
 

@@ -1,5 +1,6 @@
 import os
 import json
+import asyncio
 
 import google.generativeai as genai
 from dotenv import load_dotenv
@@ -20,7 +21,7 @@ class LLMClient:
             if not api_key:
                 raise ValueError("GEMINI_API_KEY not set in environment")
             genai.configure(api_key=api_key)
-            self.model = genai.GenerativeModel("gemini-2.0-flash")
+            self.model = genai.GenerativeModel("gemini-2.5-flash")
         # Future: elif self.provider == "hermes": ...
         # Future: elif self.provider == "k2": ...
         else:
@@ -34,11 +35,29 @@ class LLMClient:
 
     async def _generate_gemini(self, system_prompt: str, user_prompt: str) -> dict:
         full_prompt = f"{system_prompt}\n\n{user_prompt}"
-        response = self.model.generate_content(
-            full_prompt,
-            generation_config=genai.GenerationConfig(
-                response_mime_type="application/json",
-                temperature=0.2,
-            ),
+        gen_config = genai.GenerationConfig(
+            response_mime_type="application/json",
+            temperature=0.2,
         )
-        return json.loads(response.text)
+
+        try:
+            if hasattr(self.model, "generate_content_async"):
+                response = await self.model.generate_content_async(
+                    full_prompt,
+                    generation_config=gen_config,
+                )
+            else:
+                response = await asyncio.to_thread(
+                    self.model.generate_content,
+                    full_prompt,
+                    generation_config=gen_config,
+                )
+        except Exception as e:
+            raise RuntimeError(f"Gemini API call failed: {e}") from e
+
+        try:
+            return json.loads(response.text)
+        except (json.JSONDecodeError, ValueError) as e:
+            raise RuntimeError(
+                f"Failed to parse LLM response as JSON: {e}\nRaw response: {response.text[:500]}"
+            ) from e
