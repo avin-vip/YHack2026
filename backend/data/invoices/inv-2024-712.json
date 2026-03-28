@@ -1,0 +1,40 @@
+{
+  "id": "inv-2024-712",
+  "account_id": "nexus-corp-40120",
+  "contract_id": "ctr-67890",
+  "billing_period": "2024-10",
+  "issued_date": "2024-11-01",
+  "due_date": "2024-12-01",
+  "line_items": [
+    {
+      "id": "li-101",
+      "description": "Enterprise - Base Fee",
+      "quantity": 1,
+      "unit_price": 42000,
+      "discount_rate": 0.15,
+      "amount": 35700,
+      "type": "base",
+      "note": "15% discount applied"
+    },
+    {
+      "id": "li-102",
+      "description": "Overage Charges",
+      "quantity": 0,
+      "unit_price": 0,
+      "discount_rate": 0,
+      "amount": 0,
+      "type": "overage",
+      "note": "No overage recorded"
+    }
+  ],
+  "subtotal": 35700,
+  "discount_applied": {
+    "rate": 0.15,
+    "applied_to": "all_charges",
+    "note": "Discount incorrectly applied to all line items"
+  },
+  "total": 35700,
+  "currency": "USD",
+  "status": "issued",
+  "payment_status": "paid"
+}

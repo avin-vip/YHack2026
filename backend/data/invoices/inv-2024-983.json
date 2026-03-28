@@ -1,0 +1,40 @@
+{
+  "id": "inv-2024-983",
+  "account_id": "titan-saas-77450",
+  "contract_id": "ctr-11223",
+  "billing_period": "2024-10",
+  "issued_date": "2024-11-01",
+  "due_date": "2024-12-01",
+  "line_items": [
+    {
+      "id": "li-201",
+      "description": "Enterprise Plus - Base Fee",
+      "quantity": 1,
+      "unit_price": 125000,
+      "discount_rate": 0.20,
+      "amount": 100000,
+      "type": "base",
+      "note": "20% discount applied"
+    },
+    {
+      "id": "li-202",
+      "description": "Overage Charges",
+      "quantity": 1200,
+      "unit_price": 0.04,
+      "discount_rate": 0.20,
+      "amount": 38.40,
+      "type": "overage",
+      "note": "Overage recorded but discount incorrectly applied"
+    }
+  ],
+  "subtotal": 100038.40,
+  "discount_applied": {
+    "rate": 0.20,
+    "applied_to": "all_charges",
+    "note": "Discount incorrectly applied to overage charges per §11.2 violation"
+  },
+  "total": 100038,
+  "currency": "USD",
+  "status": "issued",
+  "payment_status": "paid"
+}

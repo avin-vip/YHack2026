@@ -1,13 +1,14 @@
 // ── MAIN ENTRY POINT ──
 // Orchestrates all modules, step functions, keyboard, init.
 
-import { state, STEPS, agentData, setAgentData } from './state.js';
+import { state, STEPS, agentData, setAgentData, ACCOUNTS, ACCOUNT_FALLBACK_DATA } from './state.js';
 import { healthCheck, analyzeAccount, transformAnalysisResult } from './api.js';
 import { log, setTermState, setTermOut, setConfidence, setStatus, setSB } from './terminals.js';
 import { drawEdges, activateEdge, setNode, resetEdges } from './graph.js';
 import { updateEmail, updateBillingPayload, updateRankedActions, showReport, giveFeedback, exportReport, copyJSON, resetDock } from './dock.js';
 import { openReasoning, closeReasoning, showActionDetail } from './reasoning.js';
 import { startResize } from './resize.js';
+import { renderOpsView, setDrillDownHandler } from './ops.js';
 
 // ── Expose to HTML onclick handlers ──
 window.advance = advance;
@@ -21,11 +22,16 @@ window.giveFeedback = giveFeedback;
 window.exportReport = exportReport;
 window.copyJSON = copyJSON;
 window.startResize = startResize;
+window.switchMode = switchMode;
 
 // ── BACKEND PRE-FETCH ──
 let backendPromise = null;
 
-// ── VIEW TOGGLE ──
+// ── CURRENT MODE ──
+// 'ops' = multi-account grid view, 'detail' = single-account step-through
+let currentMode = 'ops';
+
+// ── VIEW TOGGLE (summary/raw) ──
 function setView(mode) {
   state.viewMode = mode;
   document.getElementById('vt-summary').className = 'vt-btn' + (mode === 'summary' ? ' active' : '');
@@ -33,6 +39,71 @@ function setView(mode) {
   document.querySelectorAll('.log-msg.dim').forEach(el => {
     el.closest('.log-line').style.display = mode === 'raw' ? '' : 'none';
   });
+}
+
+// ── MODE SWITCH (ops/detail) ──
+function switchMode(mode, accountId, accountData) {
+  currentMode = mode;
+  const body = document.getElementById('mainBody');
+  const detailView = document.getElementById('detailView');
+  const opsContainer = document.getElementById('opsContainer');
+  const modeOps = document.getElementById('mode-ops');
+  const modeDetail = document.getElementById('mode-detail');
+
+  // Update mode toggle
+  modeOps.className = 'vt-btn' + (mode === 'ops' ? ' active' : '');
+  modeDetail.className = 'vt-btn' + (mode === 'detail' ? ' active' : '');
+
+  // Detail-only header elements
+  const detailOnlyEls = [
+    'detail-controls', 'detail-controls-right',
+    'stepPill', 'autoplayToggle',
+  ];
+
+  if (mode === 'ops') {
+    opsContainer.style.display = '';
+    detailView.style.display = 'none';
+    detailOnlyEls.forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.style.display = 'none';
+    });
+    document.getElementById('back-btn').style.display = 'none';
+    // Show ops-specific controls
+    document.getElementById('advBtn').style.display = 'none';
+    document.getElementById('resetBtn').style.display = 'none';
+  } else {
+    opsContainer.style.display = 'none';
+    detailView.style.display = 'flex';
+    detailOnlyEls.forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.style.display = '';
+    });
+    document.getElementById('back-btn').style.display = '';
+    document.getElementById('advBtn').style.display = '';
+
+    if (accountId && accountData) {
+      setAgentData(accountData);
+      resetAll();
+      updateDetailHeader(accountId);
+    }
+
+    // Redraw edges after layout change
+    setTimeout(() => drawEdges(), 50);
+  }
+}
+
+function updateDetailHeader(accountId) {
+  const account = ACCOUNTS.find(a => a.id === accountId);
+  if (!account) return;
+  const arrDisplay = account.arr >= 1000000
+    ? '$' + (account.arr / 1000000).toFixed(1) + 'M'
+    : '$' + (account.arr / 1000).toFixed(0) + 'K';
+  const contractId = accountId === 'acme-ent-90210' ? 'CTR-12345'
+    : accountId === 'nexus-corp-40120' ? 'CTR-67890'
+    : 'CTR-11223';
+  document.getElementById('hd-account-id').textContent = account.id.toUpperCase();
+  document.getElementById('hd-arr').textContent = arrDisplay;
+  document.getElementById('hd-contract').textContent = contractId;
 }
 
 // ── STEP UI ──
@@ -60,7 +131,7 @@ const stepFns = [
   function step1() {
     document.getElementById('idle-overlay').classList.add('hidden');
     setStatus('ANALYZING', 'live');
-    setSB('sb-case', 'CASE ACME-ENT-90210 OPENED', 'live');
+    setSB('sb-case', 'CASE ' + (document.getElementById('hd-account-id')?.textContent || 'ACME-ENT-90210') + ' OPENED', 'live');
     setSB('sb-agents', 'AGENTS 1/4', 'live');
 
     const ev = agentData.contract.evidence || [];
@@ -69,17 +140,15 @@ const stepFns = [
     setTermState('contract', 'working', 'WORKING');
     setNode('contract', 'working');
     log('contract', 'Initializing Contract Analyst...', 'dim');
-    setTimeout(() => log('contract', 'Fetching CTR-12345 from vault...', 'dim'), 300);
-    setTimeout(() => log('contract', 'Parsing 24-page PDF agreement...', 'dim'), 700);
+    setTimeout(() => log('contract', 'Fetching contract from vault...', 'dim'), 300);
+    setTimeout(() => log('contract', 'Parsing PDF agreement...', 'dim'), 700);
     setTimeout(() => { if (ev[0]) log('contract', ev[0], 'ok'); }, 1200);
     setTimeout(() => { if (ev[1]) log('contract', ev[1], 'ok'); }, 1600);
     setTimeout(() => { if (ev[2]) log('contract', ev[2], 'warn'); }, 2100);
     setTimeout(() => {
       setTermState('contract', 'done', 'COMPLETE');
-      // Format expected revenue for terminal output (e.g. "$85,000/mo" -> "EXPECTED $85,000 / MO")
       const revDisplay = expectedRev.replace(/\/mo$/i, '').trim();
       setTermOut('contract', 'EXPECTED ' + revDisplay + ' / MO', 'ready');
-      // Abbreviate for node label (e.g. "$85,000/mo" -> "$85K expected")
       const revNum = parseFloat(revDisplay.replace(/[$,]/g, ''));
       const revLabel = isNaN(revNum) ? revDisplay : ('$' + (revNum / 1000).toFixed(0) + 'K');
       setNode('contract', 'complete', revLabel + ' expected');
@@ -103,10 +172,10 @@ const stepFns = [
     setTermState('usage', 'working', 'WORKING');
     setNode('usage', 'working');
     log('usage', 'Context received from Contract ─▶', 'acid');
-    setTimeout(() => log('usage', 'Loading usage-oct.csv (1,850 rows)...', 'dim'), 200);
+    setTimeout(() => log('usage', 'Loading usage data...', 'dim'), 200);
     setTimeout(() => log('usage', 'Deduplicating retried calls...', 'dim'), 600);
-    setTimeout(() => log('usage', 'Total consumption: 10,840 units', 'ok'), 1100);
-    setTimeout(() => log('usage', 'Contract limit: 10,000 units', 'ok'), 1400);
+    setTimeout(() => log('usage', 'Total consumption: ' + (agentData.usage.output?.total_units || '10,840') + ' units', 'ok'), 1100);
+    setTimeout(() => log('usage', 'Contract limit: ' + (agentData.usage.output?.contract_limit || '10,000') + ' units', 'ok'), 1400);
     setTimeout(() => log('usage', 'OVERAGE DETECTED: ' + usageOverage, 'hot'), 1800);
     setTimeout(() => {
       setTermState('usage', 'done', 'COMPLETE');
@@ -120,14 +189,13 @@ const stepFns = [
     setTermState('billing', 'active', 'WORKING');
     setNode('billing', 'working');
     log('billing', 'Context received from Contract ─▶', 'acid');
-    setTimeout(() => log('billing', 'Loading INV-2024-456...', 'dim'), 400);
+    setTimeout(() => log('billing', 'Loading invoice...', 'dim'), 400);
     setTimeout(() => log('billing', 'Line items: Base ' + billingTotal, 'dim'), 900);
-    setTimeout(() => log('billing', 'Overage line item: $0.00 ⚠', 'hot'), 1500);
-    setTimeout(() => log('billing', 'Discount applied to ALL charges', 'warn'), 2000);
+    setTimeout(() => log('billing', 'Overage line item: ' + (agentData.billing.output?.overage_line || '$0.00') + ' ⚠', 'hot'), 1500);
+    setTimeout(() => log('billing', 'Discount: ' + (agentData.billing.output?.discount_error || '25% applied to ALL charges'), 'warn'), 2000);
     setTimeout(() => {
       setTermState('billing', 'done', 'COMPLETE');
       setTermOut('billing', 'BILLED ' + billingTotal + ' — UNDERBILLED', 'hot');
-      // Abbreviate dollar amount for node label (e.g. "$63,750" -> "$63.7K")
       const billingNum = parseFloat(billingTotal.replace(/[$,]/g, ''));
       const billingLabel = isNaN(billingNum) ? billingTotal : ('$' + (billingNum / 1000).toFixed(1) + 'K');
       setNode('billing', 'complete', billingLabel + ' billed');
@@ -143,7 +211,6 @@ const stepFns = [
     activateEdge('billing', 'orch', '#e84040');
     setStatus('LEAKAGE FOUND', 'alert');
 
-    // Extract real confidence and leakage values
     const cConf = agentData.contract.confidence;
     const uConf = agentData.usage.confidence;
     const bConf = agentData.billing.confidence;
@@ -152,7 +219,6 @@ const stepFns = [
     const bImpact = agentData.billing.impact;
     const avgConf = ((cConf + uConf + bConf) / 3 * 100).toFixed(1);
 
-    // Parse net leakage from orch output (strip $ and , to get number)
     const netLeakageStr = (agentData.orch.output && agentData.orch.output.net_leakage) || '$21,250';
     const netLeakageNum = parseFloat(netLeakageStr.replace(/[$,]/g, '')) || 21250;
     const leakageFormatted = '$' + netLeakageNum.toLocaleString();
@@ -164,8 +230,8 @@ const stepFns = [
     setTimeout(() => log('orch', `Contract conf: ${cConf} · impact: $${(cImpact/1000).toFixed(0)}K`, 'blue'), 300);
     setTimeout(() => log('orch', `Usage conf: ${uConf} · impact: $${(uImpact/1000).toFixed(0)}K`, 'blue'), 600);
     setTimeout(() => log('orch', `Billing conf: ${bConf} · impact: $${(bImpact/1000).toFixed(1)}K`, 'blue'), 900);
-    setTimeout(() => log('orch', 'Overage: 840 × $0.05 × 1,000 = $42,000', 'warn'), 1300);
-    setTimeout(() => log('orch', 'Discount correction: −$20,750', 'hot'), 1700);
+    setTimeout(() => log('orch', 'Computing net leakage...', 'warn'), 1300);
+    setTimeout(() => log('orch', 'Discount correction applied', 'hot'), 1700);
     setTimeout(() => {
       log('orch', `NET LEAKAGE: ${leakageFormatted} | avg conf: ${avgConf}%`, 'hot');
       setSB('sb-leak', `LEAKAGE ${leakageFormatted}`, 'hot');
@@ -174,6 +240,13 @@ const stepFns = [
 
       const overlay = document.getElementById('leakage-overlay');
       overlay.classList.add('show');
+
+      // Update subtitle with account-specific data
+      const overageUnits = agentData.usage.output?.overage || '840 units';
+      const overageRate = agentData.contract.output?.overage_rate || '$0.05/unit';
+      document.getElementById('leakageSub').textContent =
+        overageUnits.toUpperCase() + ' OVERAGE × ' + overageRate.toUpperCase();
+
       let cur = 0; const target = netLeakageNum;
       const inc = target / 50;
       const iv = setInterval(() => {
@@ -194,13 +267,12 @@ const stepFns = [
     setTermOut('orch', 'LEAKAGE: ' + leakageFormatted + ' CONFIRMED', 'hot');
     setNode('orch', 'orch-active');
     log('orch', 'Generating ranked action list...', 'warn');
-    setTimeout(() => log('orch', 'INV-2024-889 created: ' + leakageFormatted + ' (score 92.3)', 'ok'), 400);
-    setTimeout(() => log('orch', 'Discount correction queued (score 76.4)', 'ok'), 800);
-    setTimeout(() => log('orch', 'CRM ticket TKT-789 opened', 'ok'), 1000);
+    setTimeout(() => log('orch', 'Correction invoice created: ' + leakageFormatted, 'ok'), 400);
+    setTimeout(() => log('orch', 'Discount correction queued', 'ok'), 800);
+    setTimeout(() => log('orch', 'CRM ticket opened', 'ok'), 1000);
     setTimeout(() => log('orch', '#finance-ops Slack notification sent', 'ok'), 1200);
     setTimeout(() => log('orch', 'Recovery package dispatched ─▶', 'acid'), 1600);
 
-    // Pass real data to dock panels
     const emailData = agentData.orch.email || {};
     const billingPayload = agentData.orch.billing_payload || {};
     const recoveryActions = agentData.orch.recovery_actions;
@@ -208,7 +280,6 @@ const stepFns = [
     setTimeout(() => updateEmail(emailData), 500);
     setTimeout(() => updateBillingPayload(billingPayload), 900);
 
-    // Transform recovery_actions to the format dock.js expects
     if (recoveryActions && Array.isArray(recoveryActions) && recoveryActions.length > 0) {
       const dockActions = recoveryActions.map((a, i) => ({
         rank: i + 1,
@@ -234,7 +305,7 @@ const stepFns = [
     setStatus('RECOVERY COMPLETE', 'done');
     setNode('orch', 'orch-done', leakageK + ' recovered');
     setSB('sb-leak', leakageFormatted + ' RECOVERED', 'cool');
-    setSB('sb-case', 'CASE ACME-ENT-90210 CLOSED ✓', 'cool');
+    setSB('sb-case', 'CASE CLOSED ✓', 'cool');
 
     const flash = document.getElementById('recovery-flash');
     flash.classList.add('flash');
@@ -342,9 +413,13 @@ function resetAll() {
 document.addEventListener('keydown', e => {
   if (e.code === 'Space' && !e.target.matches('input,textarea')) {
     e.preventDefault();
-    if (state.currentStep < 5) advance();
+    if (currentMode === 'detail' && state.currentStep < 5) advance();
   }
-  if (e.code === 'Escape') closeReasoning();
+  if (e.code === 'Escape') {
+    if (currentMode === 'detail') {
+      closeReasoning();
+    }
+  }
 });
 
 // ── CLICK GRAPH NODES ──
@@ -353,17 +428,28 @@ document.addEventListener('keydown', e => {
   if (el) el.addEventListener('click', () => openReasoning(id));
 });
 
+// ── DRILL-DOWN HANDLER ──
+setDrillDownHandler((accountId, data) => {
+  switchMode('detail', accountId, data);
+});
+
 // ── INIT ──
 window.addEventListener('load', async () => {
   drawEdges();
   window.addEventListener('resize', drawEdges);
   updateStepUI();
 
-  // Check if backend is available
+  // Render the ops view into the container
+  const opsContainer = document.getElementById('opsContainer');
+  renderOpsView(opsContainer);
+
+  // Start in ops mode
+  switchMode('ops');
+
+  // Check backend availability
   const backendUp = await healthCheck();
   if (backendUp) {
     console.log('[ARIA] Backend connected at localhost:8000');
-    // Start pre-fetching analysis in the background (don't await)
     backendPromise = analyzeAccount('acme-ent-90210');
   } else {
     console.log('[ARIA] Backend offline — using fallback data');
