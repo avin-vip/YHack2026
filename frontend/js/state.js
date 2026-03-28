@@ -83,6 +83,14 @@ export function setAgentData(data) {
   agentData = data;
 }
 
+/**
+ * Replace the ACCOUNTS array in place with accounts fetched from the backend.
+ * Mutates the existing array so all modules that imported it see the update.
+ */
+export function setAccounts(newAccounts) {
+  ACCOUNTS.splice(0, ACCOUNTS.length, ...newAccounts);
+}
+
 // ── MULTI-ACCOUNT FALLBACK DATA ──
 
 export const ACCOUNTS = [

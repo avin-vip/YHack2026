@@ -2,9 +2,8 @@
 // Orchestrates all modules, step functions, keyboard, init.
 
 
-import { state, STEPS, agentData, setAgentData, ACCOUNTS, ACCOUNT_FALLBACK_DATA } from './state.js';
-import { state, STEPS, agentData, setAgentData, AVAILABLE_MODELS, ACCOUNT_FALLBACK_DATA, modelSelections } from './state.js';
-import { healthCheck, analyzeAccount, transformAnalysisResult } from './api.js';
+import { state, STEPS, agentData, setAgentData, setAccounts, ACCOUNTS, ACCOUNT_FALLBACK_DATA, AVAILABLE_MODELS, modelSelections } from './state.js';
+import { healthCheck, analyzeAccount, listAccounts, transformAnalysisResult } from './api.js';
 import { log, setTermState, setTermOut, setConfidence, setStatus, setSB } from './terminals.js';
 import { drawEdges, activateEdge, setNode, resetEdges } from './graph.js';
 import { updateEmail, updateBillingPayload, updateRankedActions, showReport, giveFeedback, exportReport, copyJSON, resetDock } from './dock.js';
@@ -100,9 +99,9 @@ function updateDetailHeader(accountId) {
   const arrDisplay = account.arr >= 1000000
     ? '$' + (account.arr / 1000000).toFixed(1) + 'M'
     : '$' + (account.arr / 1000).toFixed(0) + 'K';
-  const contractId = accountId === 'acme-ent-90210' ? 'CTR-12345'
-    : accountId === 'nexus-corp-40120' ? 'CTR-67890'
-    : 'CTR-11223';
+  const contractId = account.contract_id
+    ? account.contract_id.toUpperCase()
+    : accountId.toUpperCase();
   document.getElementById('hd-account-id').textContent = account.id.toUpperCase();
   document.getElementById('hd-arr').textContent = arrDisplay;
   document.getElementById('hd-contract').textContent = contractId;
@@ -472,9 +471,21 @@ window.addEventListener('load', async () => {
 
   // Check backend availability
   const backendUp = await healthCheck();
+  state.backendUp = backendUp;
   if (backendUp) {
     console.log('[ARIA] Backend connected at localhost:8000');
     backendPromise = analyzeAccount('acme-ent-90210');
+
+    // Fetch real account list and re-render the ops grid
+    listAccounts().then(accounts => {
+      if (accounts && accounts.length > 0) {
+        setAccounts(accounts);
+        renderOpsView(opsContainer);
+        console.log(`[ARIA] Loaded ${accounts.length} accounts from backend`);
+      }
+    }).catch(err => {
+      console.warn('[ARIA] Failed to fetch accounts — using hardcoded list', err);
+    });
   } else {
     console.log('[ARIA] Backend offline — using fallback data');
   }
