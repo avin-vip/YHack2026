@@ -95,6 +95,12 @@ class LLMClient:
                 result = await self._generate_gemini(system_prompt, user_prompt)
             elif self.provider == "k2":
                 result = await self._generate_k2(system_prompt, user_prompt)
+            elif self.provider in LAVA_MODELS:
+                fmt = self.lava_config["format"]
+                if fmt == "anthropic":
+                    result = await self._generate_lava_anthropic(system_prompt, user_prompt)
+                else:
+                    result = await self._generate_lava_openai(system_prompt, user_prompt)
             else:
                 raise ValueError(f"Provider {self.provider} not implemented")
             return result
@@ -215,6 +221,7 @@ class LLMClient:
             raise RuntimeError(f"Lava/{name} call failed: {e}") from e
 
         content = data["choices"][0]["message"]["content"]
+        self._last_raw = content
         return self._extract_json(content)
 
     # ── Lava gateway: Anthropic providers (Claude) ──
@@ -250,6 +257,7 @@ class LLMClient:
 
         # Anthropic response: { content: [{ type: "text", text: "..." }] }
         content = data["content"][0]["text"]
+        self._last_raw = content
         return self._extract_json(content)
 
     # ── JSON extraction ──
