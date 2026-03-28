@@ -178,3 +178,6 @@ cypress/videos/
 /.output
 
 # LangSmith / OpenAI / API Keys (already covered by .env)
+
+# Frontend stuff
+frontend/package-lock.json

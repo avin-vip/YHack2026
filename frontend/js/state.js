@@ -1,11 +1,24 @@
 // ── SHARED STATE ──
 // All modules read/write from this shared state object.
 
+export const AVAILABLE_MODELS = [
+  { id: 'gemini', name: 'Gemini 2.5 Flash' },
+  { id: 'k2', name: 'K2 Think V2' },
+];
+
+export const modelSelections = {
+  contract: 'gemini',
+  usage: 'gemini',
+  billing: 'gemini',
+  orch: 'gemini',
+};
+
 export const state = {
   currentStep: 0,
   autoplay: false,
   autoTimer: null,
   viewMode: 'summary',
+  modelsLocked: false,
 };
 
 export const STEPS = [

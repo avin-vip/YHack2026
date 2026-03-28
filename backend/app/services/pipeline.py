@@ -1,4 +1,5 @@
 import json
+import os
 from pathlib import Path
 
 from app.agents.llm import LLMClient
@@ -71,20 +72,28 @@ def _parse_dollar_amount(value: str) -> int:
         return 0
 
 
-async def run_analysis(account_id: str) -> dict:
+def _get_llm(agent_name: str, providers: dict | None = None) -> LLMClient:
+    """Get LLM client for a specific agent, allowing per-agent provider override."""
+    providers = providers or {}
+    provider = providers.get(agent_name) or os.getenv("LLM_PROVIDER", "gemini")
+    return LLMClient(provider=provider)
+
+
+async def run_analysis(account_id: str, providers: dict | None = None) -> dict:
     """Run the full 4-agent analysis pipeline for an account."""
     account_data = load_account_data(account_id)
-    llm = LLMClient()
     contract = account_data["contract"]
 
     # Step 1: Contract Analyst
     try:
-        contract_agent = ContractAnalyst(llm)
+        contract_llm = _get_llm("contract", providers)
+        contract_agent = ContractAnalyst(contract_llm)
         contract_result = await contract_agent.run({
             "contract": contract,
             "input_description": f"{contract['id']} · {contract['total_pages']}-page PDF agreement",
         })
         contract_result["impact"] = contract.get("base_fee_monthly", 0)
+        contract_result["model"] = contract_llm.model_name
     except Exception as e:
         contract_result = _make_error_result(
             "Contract Analyst",
@@ -94,7 +103,8 @@ async def run_analysis(account_id: str) -> dict:
 
     # Step 2: Usage Validator + Billing Auditor (conceptually parallel)
     try:
-        usage_agent = UsageValidator(llm)
+        usage_llm = _get_llm("usage", providers)
+        usage_agent = UsageValidator(usage_llm)
         usage_result = await usage_agent.run({
             "usage": account_data["usage"],
             "contract": contract,
@@ -104,6 +114,7 @@ async def run_analysis(account_id: str) -> dict:
         overage_rate = contract.get("overage_rate_per_unit", 0)
         unit_multiplier = contract.get("unit_multiplier", 1)
         usage_result["impact"] = overage_units * overage_rate * unit_multiplier
+        usage_result["model"] = usage_llm.model_name
     except Exception as e:
         usage_result = _make_error_result(
             "Usage Validator",
@@ -112,13 +123,15 @@ async def run_analysis(account_id: str) -> dict:
         )
 
     try:
-        billing_agent = BillingAuditor(llm)
+        billing_llm = _get_llm("billing", providers)
+        billing_agent = BillingAuditor(billing_llm)
         billing_result = await billing_agent.run({
             "invoice": account_data["invoice"],
             "contract": contract,
             "input_description": f"{account_data['invoice']['id']} · ${account_data['invoice']['total']:,} issued",
         })
         billing_result["impact"] = account_data["invoice"].get("total", 0)
+        billing_result["model"] = billing_llm.model_name
     except Exception as e:
         billing_result = _make_error_result(
             "Billing Auditor",
@@ -128,7 +141,8 @@ async def run_analysis(account_id: str) -> dict:
 
     # Step 3: Orchestrator
     try:
-        orch_agent = Orchestrator(llm)
+        orch_llm = _get_llm("orch", providers)
+        orch_agent = Orchestrator(orch_llm)
         orch_result = await orch_agent.run({
             "contract_result": contract_result,
             "usage_result": usage_result,
@@ -138,6 +152,7 @@ async def run_analysis(account_id: str) -> dict:
         })
         net_leakage_str = orch_result.get("output", {}).get("net_leakage", "0")
         orch_result["impact"] = _parse_dollar_amount(net_leakage_str)
+        orch_result["model"] = orch_llm.model_name
     except Exception as e:
         orch_result = _make_error_result(
             "Orchestrator",
