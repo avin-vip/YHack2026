@@ -4,6 +4,10 @@
 export const AVAILABLE_MODELS = [
   { id: 'gemini', name: 'Gemini 2.5 Flash' },
   { id: 'k2', name: 'K2 Think V2' },
+  { id: 'gpt-4o', name: 'GPT-4o' },
+  { id: 'claude-sonnet', name: 'Claude Sonnet 4' },
+  { id: 'claude-haiku', name: 'Claude Haiku 4.5' },
+  { id: 'kimi', name: 'Kimi' },
 ];
 
 export const modelSelections = {
