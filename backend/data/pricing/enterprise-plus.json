@@ -1,0 +1,18 @@
+{
+  "tier_id": "enterprise-plus",
+  "name": "Enterprise Plus",
+  "base_fee": 85000,
+  "usage_limit": 10000,
+  "usage_unit": "API calls",
+  "overage_rate": 0.05,
+  "unit_multiplier": 1000,
+  "billing_cycle": "monthly",
+  "discount_eligible": true,
+  "max_discount_rate": 0.30,
+  "features": [
+    "Dedicated support",
+    "SLA 99.99%",
+    "Custom integrations",
+    "Priority queue"
+  ]
+}

@@ -1,0 +1,36 @@
+{
+  "id": "ctr-12345",
+  "account_id": "acme-ent-90210",
+  "effective_date": "2023-01-15",
+  "expiration_date": "2025-01-14",
+  "term_months": 24,
+  "pricing_tier": "Enterprise Plus",
+  "base_fee_monthly": 85000,
+  "usage_limit_monthly": 10000,
+  "usage_unit": "API calls",
+  "overage_rate_per_unit": 0.05,
+  "unit_multiplier": 1000,
+  "discount": {
+    "rate": 0.25,
+    "scope": "base_only",
+    "clause": "§12.3",
+    "description": "25% discount applies to base charges only"
+  },
+  "clauses": {
+    "overage": {
+      "section": "§4.2",
+      "text": "Overage rate: $0.05 per unit above monthly limit of 10,000 units. Overage charges are calculated at the end of each billing cycle and invoiced separately or as a line item on the monthly invoice."
+    },
+    "base_limit": {
+      "section": "§7.1",
+      "text": "Base usage limit: 10,000 units per month. Units are measured as individual API calls aggregated across all endpoints."
+    },
+    "discount_scope": {
+      "section": "§12.3",
+      "text": "Discounts apply to base charges only, not overage or add-on charges. Any discount applied beyond base charges is a billing error and subject to correction."
+    }
+  },
+  "total_pages": 24,
+  "signed_by": "J. Richardson, VP Finance",
+  "status": "active"
+}
