@@ -75,7 +75,7 @@ PRICING_TIERS = [
 # ── Synthetic company identities ───────────────────────────────────────────────
 
 COMPANIES = [
-    ("Nexus Analytics",      "SaaS / Analytics",              "US-WEST",    "finance@nexusanalytics.io"),
+    ("Orbit Systems Prime",  "Cloud Infrastructure",          "US-EAST",    "billing@orbitsystemsprime.io"),
     ("Orbit Systems",        "Cloud Infrastructure",           "US-EAST",    "billing@orbitsystems.io"),
     ("Sentinel Technologies","Cybersecurity",                  "EU-WEST",    "accounts@sentineltech.io"),
     ("Meridian Data",        "Data Engineering",               "US-CENTRAL", "finance@meridiandata.io"),

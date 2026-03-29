@@ -1,137 +1,138 @@
 {
-  "account_id": "nexus-analytics-000",
+  "account_id": "orbit-systems-001",
   "period": "2024-10",
-  "source": "usage-oct-nexus-analytics-000.csv",
-  "total_rows": 1179,
-  "total_units": 1070,
-  "contract_limit": 1000,
-  "overage_units": 70,
+  "source": "usage-oct-orbit-systems-001.csv",
+  "total_rows": 5538,
+  "total_units": 5460,
+  "contract_limit": 5000,
+  "overage_units": 460,
   "deduplicated": true,
   "retry_calls_removed": 78,
   "daily_breakdown": [
     {
       "date": "2024-10-01",
-      "units": 30
+      "units": 182
     },
     {
       "date": "2024-10-02",
-      "units": 21
+      "units": 191
     },
     {
       "date": "2024-10-03",
-      "units": 18
+      "units": 188
     },
     {
       "date": "2024-10-04",
-      "units": 29
+      "units": 194
     },
     {
       "date": "2024-10-05",
-      "units": 47
+      "units": 176
     },
     {
       "date": "2024-10-06",
-      "units": 24
+      "units": 169
     },
     {
       "date": "2024-10-07",
-      "units": 20
+      "units": 173
     },
     {
       "date": "2024-10-08",
-      "units": 35
+      "units": 177
     },
     {
       "date": "2024-10-09",
-      "units": 27
+      "units": 170
     },
     {
       "date": "2024-10-10",
-      "units": 32
+      "units": 175
     },
     {
       "date": "2024-10-11",
-      "units": 50
+      "units": 180
     },
     {
       "date": "2024-10-12",
-      "units": 34
+      "units": 172
     },
     {
       "date": "2024-10-13",
-      "units": 35
+      "units": 168
     },
     {
       "date": "2024-10-14",
-      "units": 36
+      "units": 174
     },
     {
       "date": "2024-10-15",
-      "units": 48
+      "units": 176
     },
     {
       "date": "2024-10-16",
-      "units": 44
+      "units": 179
     },
     {
       "date": "2024-10-17",
-      "units": 49
+      "units": 181
     },
     {
       "date": "2024-10-18",
-      "units": 20
+      "units": 167
     },
     {
       "date": "2024-10-19",
-      "units": 22
+      "units": 169
     },
     {
       "date": "2024-10-20",
-      "units": 39
+      "units": 173
     },
     {
       "date": "2024-10-21",
-      "units": 48
+      "units": 177
     },
     {
       "date": "2024-10-22",
-      "units": 45
+      "units": 178
     },
     {
       "date": "2024-10-23",
-      "units": 49
+      "units": 182
     },
     {
       "date": "2024-10-24",
-      "units": 21
+      "units": 171
     },
     {
       "date": "2024-10-25",
-      "units": 34
+      "units": 175
     },
     {
       "date": "2024-10-26",
-      "units": 46
+      "units": 176
     },
     {
       "date": "2024-10-27",
-      "units": 20
+      "units": 166
     },
     {
       "date": "2024-10-28",
-      "units": 39
+      "units": 174
     },
     {
       "date": "2024-10-29",
-      "units": 19
+      "units": 170
     },
     {
       "date": "2024-10-30",
-      "units": 46
+      "units": 179
     },
     {
       "date": "2024-10-31",
-      "units": 43
+      "units": 178
     }
-  ]
+  ],
+  "confidence_level": "Medium"
 }

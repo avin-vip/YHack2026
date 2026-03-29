@@ -1,0 +1,13 @@
+{
+  "id": "orbit-systems-001",
+  "name": "Orbit Systems",
+  "arr": 264000,
+  "tier": "Professional",
+  "contract_id": "ctr-cuad-0001",
+  "primary_contact": "billing@orbitsystems.io",
+  "industry": "Cloud Infrastructure",
+  "status": "active",
+  "created_at": "2024-01-01",
+  "region": "US-EAST",
+  "confidence_level": "Medium"
+}
