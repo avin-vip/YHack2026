@@ -2,7 +2,7 @@
 // Grid of parallel analysis pipelines with aggregate metrics.
 
 import { ACCOUNTS, ACCOUNT_FALLBACK_DATA } from './state.js';
-import { healthCheck, batchAnalyze, listAccounts, transformAnalysisResult } from './api.js';
+import { healthCheck, analyzeAccount, listAccounts, transformAnalysisResult } from './api.js';
 
 const AGENT_KEYS = ['contract', 'usage', 'billing', 'orch'];
 const AGENT_LABELS = { contract: 'C', usage: 'U', billing: 'B', orch: 'O' };
@@ -125,24 +125,16 @@ async function runBatchAnalysis() {
 }
 
 async function runWithBackend() {
-  // Start all cards in "working" state with staggered animation
-  ACCOUNTS.forEach((a, i) => {
-    setTimeout(() => startCardAnimation(a.id), i * 400);
+  // Start all cards immediately and dispatch all account analyses in parallel.
+  ACCOUNTS.forEach(a => startCardAnimation(a.id));
+
+  const analysisPromises = ACCOUNTS.map(async (account) => {
+    const backendResult = await analyzeAccount(account.id);
+    const transformed = transformAnalysisResult(backendResult);
+    completeCard(account.id, transformed || ACCOUNT_FALLBACK_DATA[account.id]);
   });
 
-  const result = await batchAnalyze();
-
-  if (result && result.results) {
-    result.results.forEach((r, i) => {
-      const accountId = r.account_id;
-      const transformed = transformAnalysisResult(r);
-      const data = transformed || ACCOUNT_FALLBACK_DATA[accountId];
-      setTimeout(() => completeCard(accountId, data), i * 1200 + 2000);
-    });
-  } else {
-    // Fall back if batch call failed
-    runWithFallback();
-  }
+  await Promise.allSettled(analysisPromises);
 }
 
 function runWithFallback() {
