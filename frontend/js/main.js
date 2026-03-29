@@ -27,6 +27,7 @@ window.switchMode = switchMode;
 
 // ── BACKEND PRE-FETCH ──
 let backendPromise = null;
+let currentAccountId = 'acme-ent-90210';
 
 // ── CURRENT MODE ──
 // 'ops' = multi-account grid view, 'detail' = single-account step-through
@@ -82,10 +83,15 @@ function switchMode(mode, accountId, accountData) {
     document.getElementById('back-btn').style.display = '';
     document.getElementById('advBtn').style.display = '';
 
+    if (accountId) {
+      currentAccountId = accountId;
+    }
+
     if (accountId && accountData) {
       setAgentData(accountData);
       resetAll();
       updateDetailHeader(accountId);
+      hydrateDetailFromCompletedData();
     }
 
     // Redraw edges after layout change
@@ -93,9 +99,81 @@ function switchMode(mode, accountId, accountData) {
   }
 }
 
+function hydrateDetailFromCompletedData() {
+  const netLeakage = agentData.orch?.output?.net_leakage || '$0';
+  const expectedRevenue = agentData.contract?.output?.expected_revenue || '$0/mo';
+  const usageOverage = agentData.usage?.output?.overage || '0 units';
+  const invoiceTotal = agentData.billing?.output?.invoice_total || '$0';
+
+  document.getElementById('idle-overlay').classList.add('hidden');
+  document.getElementById('leakage-overlay').classList.remove('show');
+  document.getElementById('leakageNum').textContent = '$0';
+
+  state.currentStep = 5;
+  state.modelsLocked = true;
+  updateStepUI();
+
+  ['contract', 'usage', 'billing', 'orch'].forEach(id => {
+    const nmEl = document.getElementById('nm-' + id);
+    if (nmEl) nmEl.classList.add('locked');
+  });
+
+  setTermState('contract', 'done', 'COMPLETE');
+  setTermState('usage', 'done', 'COMPLETE');
+  setTermState('billing', 'done', 'COMPLETE');
+  setTermState('orch', 'done', 'COMPLETE');
+
+  setTermOut('contract', `EXPECTED ${expectedRevenue.replace(/\/mo$/i, '').trim()} / MO`, 'ready');
+  setTermOut('usage', `OVERAGE: ${usageOverage.toUpperCase()}`, 'hot');
+  setTermOut('billing', `BILLED ${invoiceTotal} — REVIEWED`, 'hot');
+  setTermOut('orch', `LEAKAGE: ${netLeakage} CONFIRMED`, 'hot');
+
+  setNode('contract', 'complete', (expectedRevenue.replace(/\/mo$/i, '').trim()) + ' expected');
+  setNode('usage', 'complete', usageOverage.replace(' units', '') + ' overage');
+  setNode('billing', 'complete', invoiceTotal + ' billed');
+  setNode('orch', 'orch-done', netLeakage + ' recovered');
+
+  activateEdge('contract', 'usage', '#3ecfaa');
+  activateEdge('contract', 'billing', '#3ecfaa');
+  activateEdge('usage', 'orch', '#3ecfaa');
+  activateEdge('billing', 'orch', '#3ecfaa');
+
+  setConfidence('contract', agentData.contract?.confidence || 0);
+  setConfidence('usage', agentData.usage?.confidence || 0);
+  setConfidence('billing', agentData.billing?.confidence || 0);
+  setConfidence('orch', agentData.orch?.confidence || 0, '#e84040');
+
+  setStatus('RECOVERY COMPLETE', 'done');
+  setSB('sb-case', `CASE ${currentAccountId.toUpperCase()} CLOSED ✓`, 'cool');
+  setSB('sb-agents', 'AGENTS 4/4', 'cool');
+  setSB('sb-ev', 'EVIDENCE 3/3', 'cool');
+  setSB('sb-leak', `${netLeakage} RECOVERED`, 'cool');
+  const orchImpact = Math.round((agentData.orch?.confidence || 0) * (agentData.orch?.impact || 0));
+  setSB('sb-score', `SCORE ${orchImpact.toLocaleString()}`, 'cool');
+
+  const emailData = agentData.orch?.email || {};
+  const billingPayload = agentData.orch?.billing_payload || {};
+  const recoveryActions = agentData.orch?.recovery_actions;
+  const dockActions = (Array.isArray(recoveryActions) && recoveryActions.length > 0)
+    ? recoveryActions.map((a, i) => ({
+      rank: i + 1,
+      name: a.name || a.action || ('Action ' + (i + 1)),
+      score: a.score || a.confidence_score || 0,
+      description: a.description || '',
+      amount: a.amount != null ? a.amount : '',
+      amountClass: i === 0 ? 'hot' : '',
+    }))
+    : null;
+  updateEmail(emailData);
+  updateBillingPayload(billingPayload);
+  updateRankedActions(dockActions);
+  showReport();
+}
+
 function updateDetailHeader(accountId) {
   const account = ACCOUNTS.find(a => a.id === accountId);
   if (!account) return;
+  currentAccountId = accountId;
   const arrDisplay = account.arr >= 1000000
     ? '$' + (account.arr / 1000000).toFixed(1) + 'M'
     : '$' + (account.arr / 1000).toFixed(0) + 'K';
@@ -342,7 +420,7 @@ async function advance() {
 
     // Start backend fetch in background — don't block the UI animation
     if (state.backendUp) {
-      backendPromise = analyzeAccount('acme-ent-90210', { ...modelSelections });
+      backendPromise = analyzeAccount(currentAccountId, { ...modelSelections });
       backendPromise.then(result => {
         if (result) {
           const transformed = transformAnalysisResult(result);
