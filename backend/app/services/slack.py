@@ -39,7 +39,7 @@ async def send_leakage_alert(
         "blocks": [
             {
                 "type": "header",
-                "text": {"type": "plain_text", "text": "⚡ ARIA Revenue Leakage Detected", "emoji": True},
+                "text": {"type": "plain_text", "text": "🚨 ARIA Revenue Leakage Detected", "emoji": True},
             },
             {
                 "type": "section",
