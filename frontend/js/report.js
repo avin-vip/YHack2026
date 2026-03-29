@@ -360,18 +360,29 @@ function _defaultActions(netLeakage) {
   ];
 }
 
-function _actionsTable(actions, netLeakage) {
+function _actionsTable(actions, netLeakage, options = {}) {
+  const {
+    title = 'Recovery Action Plan — Ranked by Expected Utility Score',
+    includeDescription = true,
+    includeAmount = true,
+  } = options;
   const items = (actions && actions.length) ? actions : _defaultActions(netLeakage);
   const rows = items.map((a, i) => {
     const score = typeof a.score === 'number' ? a.score : 0;
     const pct   = Math.min(100, Math.round(score));
     const fill  = pct >= 80 ? '' : pct >= 55 ? 'amber' : 'low';
     const amt   = typeof a.amount === 'number' && a.amount ? `$${a.amount.toLocaleString()}` : esc(_fmt(a.amount) === '—' ? '' : _fmt(a.amount));
+    const descriptionCell = includeDescription
+      ? `<td style="color:var(--mid);font-size:11px;line-height:1.5">${esc(_fmt(a.description))}</td>`
+      : '';
+    const amountCell = includeAmount
+      ? `<td class="td-hot">${amt || '—'}</td>`
+      : '';
     return `<tr>
       <td style="font-weight:700;color:${i === 0 ? 'var(--accent)' : 'var(--mid)'}">#${i + 1}</td>
       <td>${esc(_fmt(a.name || a.action))}</td>
-      <td style="color:var(--mid);font-size:11px;line-height:1.5">${esc(_fmt(a.description))}</td>
-      <td class="td-hot">${amt || '—'}</td>
+      ${descriptionCell}
+      ${amountCell}
       <td>
         <div class="score-bar">
           <div class="score-track"><div class="score-fill ${fill}" style="width:${pct}%"></div></div>
@@ -381,12 +392,45 @@ function _actionsTable(actions, netLeakage) {
     </tr>`;
   }).join('');
 
+  const headers = [
+    '<th>Rank</th>',
+    '<th>Action</th>',
+    includeDescription ? '<th>Description</th>' : '',
+    includeAmount ? '<th>Amount</th>' : '',
+    '<th>Score</th>',
+  ].filter(Boolean).join('');
+
   return `
-  <div class="rpt-h3">Recovery Action Plan — Ranked by Expected Utility Score</div>
+  <div class="rpt-h3">${esc(title)}</div>
   <table class="rpt-actions rpt-avoid">
-    <thead><tr><th>Rank</th><th>Action</th><th>Description</th><th>Amount</th><th>Score</th></tr></thead>
+    <thead><tr>${headers}</tr></thead>
     <tbody>${rows}</tbody>
   </table>`;
+}
+
+function _summarizedActionsTable(actions, netLeakage) {
+  return _actionsTable(actions, netLeakage, {
+    title: 'Summarized Action Plan',
+    includeDescription: false,
+    includeAmount: false,
+  });
+}
+
+function _dashboardTopActions(accounts, totalLeakage) {
+  const flattened = (accounts || [])
+    .flatMap((a) => {
+      const orch = a?.orch || {};
+      const netLeakage = parseCurrency(orch?.output?.net_leakage || 0);
+      return (orch.recovery_actions || []).map((ra) => ({
+        name: ra.name || ra.action || 'Recovery Action',
+        score: typeof ra.score === 'number' ? ra.score : 0,
+        amount: typeof ra.amount === 'number' ? ra.amount : netLeakage,
+      }));
+    })
+    .sort((a, b) => (b.score || 0) - (a.score || 0));
+
+  if (flattened.length) return flattened.slice(0, 3);
+  return _defaultActions(`$${totalLeakage}`).map(({ rank, description, ...rest }) => rest);
 }
 
 // ── ANNUAL PROJECTION ─────────────────────────────────────────────────────────
@@ -558,6 +602,7 @@ function _buildAccountHTML(accountName, accountId, analysis, generatedAt) {
     </div>
 
     ${_projection(out.net_leakage)}
+    ${_summarizedActionsTable(actions, out.net_leakage)}
   </div>`;
 
   const evidenceSection = `
@@ -641,6 +686,7 @@ function _buildDashboardHTML(summary, accounts, generatedAt) {
       </div>
     </div>
     ${_projection('$' + total)}
+    ${_summarizedActionsTable(_dashboardTopActions(accounts, total), '$' + total)}
   </div>`;
 
   const tableRows = (accounts || []).map(a => {
