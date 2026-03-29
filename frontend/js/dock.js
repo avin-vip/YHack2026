@@ -1,6 +1,7 @@
 // ── RIGHT DOCK PANEL: email, billing payload, ranked actions, report, feedback ──
 import { agentData, state } from './state.js';
 import { exportAccountReport } from './report.js';
+import { showToast } from './toast.js';
 
 function _fmt(v) {
   return v == null || v === '' ? '—' : String(v);
@@ -22,30 +23,29 @@ function _buildPlainTextEmail(emailData) {
     '',
     'Dear Finance Team,',
     '',
-    'ARIA identified a billing discrepancy between executed contract terms, measured usage, and issued invoice values.',
+    'ARIA has identified a billing discrepancy between executed contract terms, measured usage, and issued invoice values.',
     '',
     'FINANCIAL SUMMARY',
-    sep,
-    `Expected Revenue: ${_fmt(o.expected)}`,
-    `Amount Invoiced:  ${_fmt(o.actual_billed)}`,
-    `Net Discrepancy:  ${_fmt(o.net_leakage)}`,
+    `Expected Revenue : ${_fmt(o.expected)}`,
+    `Amount Invoiced  : ${_fmt(o.actual_billed)}`,
+    `Net Discrepancy  : ${_fmt(o.net_leakage)}`,
     '',
-    ev.length ? 'CONTRACTUAL BASIS' : '',
-    ev.length ? sep : '',
-    ...ev.map(line => `- ${line}`),
-    ev.length ? '' : '',
+    ...(ev.length ? [
+      'CONTRACTUAL BASIS',
+      ...ev.map(line => `• ${line}`),
+      ''
+    ] : []),
     'CORRECTIVE INVOICE',
-    sep,
-    `Invoice No.: ${inv}`,
-    `Amount Due:  ${amt}`,
-    `Due Date:    Within ${due} days`,
+    `Invoice Number : ${inv}`,
+    `Amount Due     : ${amt}`,
+    `Due Date       : Within ${due} days`,
     '',
-    'Please review the corrective invoice and remit within the stated period.',
+    'Please review the corrective invoice and remit payment within the stated period.',
     '',
     'Best regards,',
     'Finance Operations',
     'ARIA Revenue Recovery System',
-  ].filter(Boolean).join('\n');
+  ].join('\n');
 }
 
 export function sendRecoveryEmail() {
@@ -59,6 +59,7 @@ export function sendRecoveryEmail() {
     `?subject=${encodeURIComponent(subject)}` +
     `&body=${encodeURIComponent(body)}`;
   window.location.href = href;
+  showToast(`EMAIL DISPATCHED — Recovery notice sent to ${rawTo}`, 'success', 6000);
 }
 
 export function updateEmail(emailData) {
@@ -70,6 +71,7 @@ export function updateEmail(emailData) {
 
   document.getElementById('tag-email').textContent = 'READY';
   document.getElementById('tag-email').className = 'dock-tag live';
+  showToast('DRAFT READY — Recovery email prepared · awaiting your approval', 'info');
   const el = document.getElementById('db-email');
   el.className = 'dock-body ready';
   el.innerHTML = `

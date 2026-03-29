@@ -10,6 +10,7 @@ import { updateEmail, updateBillingPayload, updateRankedActions, showReport, giv
 import { openReasoning, closeReasoning, closeModelSelector, showActionDetail } from './reasoning.js';
 import { startResize } from './resize.js';
 import { renderOpsView, setDrillDownHandler } from './ops.js';
+import { showToast } from './toast.js';
 
 // ── Expose to HTML onclick handlers ──
 window.advance = advance;
@@ -427,6 +428,8 @@ const stepFns = [
         document.getElementById('leakageNum').textContent = formatCurrency2(cur);
         if (cur >= target) clearInterval(iv);
       }, 22);
+
+      showToast(`⚡ LEAKAGE DETECTED — ${leakageFormatted} · ${state.currentAccountName}`, 'alert', 5000);
     }, 2500);
   },
 
@@ -443,7 +446,10 @@ const stepFns = [
     setTimeout(() => log('orch', 'Correction invoice created: ' + leakageFormatted, 'ok'), 400);
     setTimeout(() => log('orch', 'Discount correction queued', 'ok'), 800);
     setTimeout(() => log('orch', 'CRM ticket opened', 'ok'), 1000);
-    setTimeout(() => log('orch', '#finance-ops Slack notification sent', 'ok'), 1200);
+    setTimeout(() => {
+      log('orch', '#finance-ops Slack notification sent', 'ok');
+      showToast('Slack · #finance-ops notified of revenue discrepancy', 'success');
+    }, 1200);
     setTimeout(() => log('orch', 'Recovery package dispatched ─▶', 'acid'), 1600);
 
     const emailData = agentData.orch.email || {};
@@ -486,6 +492,7 @@ const stepFns = [
 
     log('orch', '─────────────────────────────────', 'dim');
     log('orch', 'CASE CLOSED — ' + leakageFormatted + ' RECOVERED', 'acid');
+    showToast(`✓ CASE CLOSED — ${leakageFormatted} queued for recovery`, 'success', 6000);
 
     activateEdge('contract', 'usage', '#3ecfaa');
     activateEdge('contract', 'billing', '#3ecfaa');

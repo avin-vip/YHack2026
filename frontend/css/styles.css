@@ -315,6 +315,36 @@ header {
 .log-msg.acid { color: var(--acid); font-weight: 600; }
 .log-msg.blue { color: var(--blue); }
 
+/* ── TOAST NOTIFICATIONS ── */
+.aria-toast {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 11px 16px;
+  background: var(--ink3);
+  border: 1px solid var(--rule2);
+  border-left: 3px solid var(--blue);
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  color: var(--bright);
+  min-width: 300px;
+  max-width: 400px;
+  pointer-events: auto;
+  opacity: 0;
+  transform: translateX(16px);
+  transition: opacity 0.22s ease, transform 0.22s ease;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.5);
+}
+.aria-toast.show { opacity: 1; transform: translateX(0); }
+.aria-toast-alert   { border-left-color: var(--amber); }
+.aria-toast-success { border-left-color: var(--cool); }
+.aria-toast-info    { border-left-color: var(--blue); }
+.aria-toast-warn    { border-left-color: var(--hot); }
+.toast-icon { font-size: 13px; flex-shrink: 0; margin-top: 1px; }
+.toast-msg  { line-height: 1.5; }
+
 .term-output {
   padding: 6px 10px;
   border-top: 1px solid var(--rule);
