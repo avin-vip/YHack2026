@@ -4,7 +4,7 @@
 
 import { state, STEPS, agentData, setAgentData, setAccounts, ACCOUNTS, ACCOUNT_FALLBACK_DATA, AVAILABLE_MODELS, modelSelections, loadModelSelectionsForAccount } from './state.js';
 import { healthCheck, analyzeAccount, listAccounts, transformAnalysisResult } from './api.js';
-import { log, setTermState, setTermOut, setConfidence, setStatus, setSB } from './terminals.js';
+import { log, logWithTimestamp, setTermState, setTermOut, setConfidence, setStatus, setSB } from './terminals.js';
 import { drawEdges, activateEdge, setNode, resetEdges } from './graph.js';
 import { updateEmail, updateBillingPayload, updateRankedActions, showReport, giveFeedback, exportReport, copyJSON, resetDock } from './dock.js';
 import { openReasoning, closeReasoning, closeModelSelector, showActionDetail } from './reasoning.js';
@@ -48,6 +48,39 @@ function parseCurrency(value) {
 function formatCurrency2(value) {
   const amount = parseCurrency(value);
   return amount.toLocaleString('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+function formatLogTimestamp(rawTs) {
+  if (typeof rawTs === 'string' && /^\d{2}:\d{2}:\d{2}$/.test(rawTs.trim())) {
+    return rawTs.trim();
+  }
+  if (typeof rawTs === 'string' && rawTs.trim()) {
+    const parsed = new Date(rawTs);
+    if (!Number.isNaN(parsed.getTime())) {
+      return parsed.toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    }
+  }
+  return new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
+}
+
+function hydrateTerminalLogs(agentId, logs, fallbackLogs = []) {
+  const validLogs = Array.isArray(logs)
+    ? logs.filter(l => l && typeof l.msg === 'string' && l.msg.trim())
+    : [];
+
+  if (validLogs.length > 0) {
+    validLogs.forEach(entry => {
+      const ts = formatLogTimestamp(entry.ts || entry.timestamp || '');
+      const level = typeof entry.level === 'string' ? entry.level : '';
+      logWithTimestamp(agentId, ts, entry.msg, level);
+    });
+    return;
+  }
+
+  fallbackLogs.forEach(entry => {
+    if (!entry || typeof entry.msg !== 'string' || !entry.msg.trim()) return;
+    log(agentId, entry.msg, entry.cls || '');
+  });
 }
 
 function renderNodeModelLabels() {
@@ -160,6 +193,29 @@ function hydrateDetailFromCompletedData() {
   setTermOut('usage', `OVERAGE: ${usageOverage.toUpperCase()}`, 'hot');
   setTermOut('billing', `BILLED ${invoiceTotal} — REVIEWED`, 'hot');
   setTermOut('orch', `LEAKAGE: ${netLeakage} CONFIRMED`, 'hot');
+
+  hydrateTerminalLogs('contract', agentData.contract?.logs, [
+    { msg: 'Initializing Contract Analyst...', cls: 'dim' },
+    { msg: 'Parsing contract agreement...', cls: 'dim' },
+    { msg: 'Analysis complete', cls: 'acid' },
+  ]);
+  hydrateTerminalLogs('usage', agentData.usage?.logs, [
+    { msg: 'Context received from Contract ─▶', cls: 'acid' },
+    { msg: `Total consumption: ${agentData.usage?.output?.total_units || '0'} units`, cls: 'ok' },
+    { msg: `Contract limit: ${agentData.usage?.output?.contract_limit || '0'} units`, cls: 'ok' },
+    { msg: `OVERAGE DETECTED: ${usageOverage}`, cls: 'hot' },
+  ]);
+  hydrateTerminalLogs('billing', agentData.billing?.logs, [
+    { msg: 'Context received from Contract ─▶', cls: 'acid' },
+    { msg: `Line items: Base ${agentData.billing?.output?.base_charge || invoiceTotal}`, cls: 'dim' },
+    { msg: `Overage line item: ${agentData.billing?.output?.overage_line || '$0.00'} ⚠`, cls: 'hot' },
+    { msg: `Discount: ${agentData.billing?.output?.discount_error || 'Review required'}`, cls: 'warn' },
+  ]);
+  hydrateTerminalLogs('orch', agentData.orch?.logs, [
+    { msg: 'All agent contexts received ─▶', cls: 'acid' },
+    { msg: 'Computing net leakage...', cls: 'warn' },
+    { msg: `NET LEAKAGE: ${netLeakage}`, cls: 'hot' },
+  ]);
 
   setNode('contract', 'complete', (expectedRevenue.replace(/\/mo$/i, '').trim()) + ' expected');
   setNode('usage', 'complete', usageOverage.replace(' units', '') + ' overage');

@@ -13,6 +13,18 @@ export function log(id, msg, cls = '') {
   body.scrollTop = body.scrollHeight;
 }
 
+export function logWithTimestamp(id, ts, msg, cls = '') {
+  const body = document.getElementById('tb-' + id);
+  if (!body) return;
+  const line = document.createElement('div');
+  line.className = 'log-line';
+  const span = `<span class="log-msg ${cls}">${msg}</span>`;
+  line.innerHTML = `<span class="log-ts">${ts}</span>${span}`;
+  if (cls === 'dim' && state.viewMode === 'summary') line.style.display = 'none';
+  body.appendChild(line);
+  body.scrollTop = body.scrollHeight;
+}
+
 export function setTermState(id, termState, label) {
   document.getElementById('td-' + id).className = 'term-dot ' + termState;
   document.getElementById('ts-' + id).className = 'term-state ' + termState;

@@ -208,6 +208,7 @@ export function transformAnalysisResult(backendResult) {
       impact: agent.impact,
       evidence: agent.evidence,
       reasoning: agent.reasoning,
+      logs: Array.isArray(agent.logs) ? agent.logs : [],
       model: agent.model || null,
     };
   }
