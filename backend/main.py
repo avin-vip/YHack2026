@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.routes import accounts, analysis, actions, audit
+from app.routes import accounts, analysis, actions, audit, upload, reports
 
 app = FastAPI(
     title="ARIA API",
@@ -21,6 +21,8 @@ app.include_router(accounts.router, prefix="/api", tags=["accounts"])
 app.include_router(analysis.router, prefix="/api", tags=["analysis"])
 app.include_router(actions.router, prefix="/api", tags=["actions"])
 app.include_router(audit.router, prefix="/api", tags=["audit"])
+app.include_router(upload.router, prefix="/api", tags=["upload"])
+app.include_router(reports.router, prefix="/api", tags=["reports"])
 
 
 @app.get("/api/health")

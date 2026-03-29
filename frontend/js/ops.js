@@ -2,7 +2,8 @@
 // Grid of parallel analysis pipelines with aggregate metrics.
 
 import { ACCOUNTS, ACCOUNT_FALLBACK_DATA } from './state.js';
-import { healthCheck, batchAnalyze, listAccounts, transformAnalysisResult } from './api.js';
+import { healthCheck, batchAnalyze, listAccounts, transformAnalysisResult, uploadContract } from './api.js';
+import { exportDashboardReport } from './report.js';
 
 const AGENT_KEYS = ['contract', 'usage', 'billing', 'orch'];
 const AGENT_LABELS = { contract: 'C', usage: 'U', billing: 'B', orch: 'O' };
@@ -11,6 +12,9 @@ const AGENT_LABELS = { contract: 'C', usage: 'U', billing: 'B', orch: 'O' };
 let cardStates = {};
 let totalLeakage = 0;
 let animatingTotal = false;
+
+// Runtime accounts added via PDF upload (not in the static ACCOUNTS list)
+let runtimeAccounts = [];
 
 // Callback when user clicks a card to drill into single-account view
 let onDrillDown = null;
@@ -47,7 +51,12 @@ export function renderOpsView(container) {
             <div class="ops-metric-value" id="ops-confidence">—</div>
           </div>
         </div>
-        <button class="btn primary ops-analyze-btn" id="ops-analyze-btn">▶ ANALYZE ALL</button>
+        <div class="ops-header-actions">
+          <button class="btn ops-upload-btn" id="ops-upload-btn">↑ UPLOAD</button>
+          <input type="file" id="ops-upload-input" accept=".pdf" style="display:none">
+          <button class="btn ops-export-btn" id="ops-export-btn" style="display:none">↓ EXPORT REPORT</button>
+          <button class="btn primary ops-analyze-btn" id="ops-analyze-btn">▶ ANALYZE ALL</button>
+        </div>
       </div>
       <div class="ops-grid" id="ops-grid">
         ${ACCOUNTS.map(a => renderCard(a)).join('')}
@@ -59,18 +68,13 @@ export function renderOpsView(container) {
   `;
 
   document.getElementById('ops-analyze-btn').addEventListener('click', runBatchAnalysis);
+  document.getElementById('ops-upload-btn').addEventListener('click', () => {
+    document.getElementById('ops-upload-input').click();
+  });
+  document.getElementById('ops-upload-input').addEventListener('change', handleUpload);
 
   // Click-to-drill-down on cards
-  ACCOUNTS.forEach(a => {
-    const card = document.getElementById(`card-${a.id}`);
-    if (card) {
-      card.addEventListener('click', () => {
-        if (onDrillDown && cardStates[a.id]?.phase === 'done') {
-          onDrillDown(a.id, cardStates[a.id].data);
-        }
-      });
-    }
-  });
+  _wireCardClicks(ACCOUNTS);
 }
 
 function renderCard(account) {
@@ -107,6 +111,78 @@ function renderCard(account) {
   `;
 }
 
+// ── HELPERS ──
+
+function _allAccounts() {
+  return [...ACCOUNTS, ...runtimeAccounts];
+}
+
+function _wireCardClicks(accounts) {
+  accounts.forEach(a => {
+    const card = document.getElementById(`card-${a.id}`);
+    if (card) {
+      card.addEventListener('click', () => {
+        if (onDrillDown && cardStates[a.id]?.phase === 'done') {
+          onDrillDown(a.id, cardStates[a.id].data);
+        }
+      });
+    }
+  });
+}
+
+function _updateAccountCount() {
+  const countEl = document.getElementById('ops-count');
+  if (countEl) countEl.textContent = _allAccounts().length;
+}
+
+// ── PDF UPLOAD ──
+
+async function handleUpload(evt) {
+  const file = evt.target.files?.[0];
+  if (!file) return;
+
+  // Reset input so the same file can be re-uploaded if needed
+  evt.target.value = '';
+
+  const uploadBtn = document.getElementById('ops-upload-btn');
+  uploadBtn.disabled = true;
+  uploadBtn.textContent = '↑ UPLOADING…';
+
+  const footer = document.getElementById('ops-footer-text');
+  footer.textContent = `UPLOADING — ${file.name}…`;
+
+  let result;
+  try {
+    result = await uploadContract(file);
+  } catch (err) {
+    uploadBtn.disabled = false;
+    uploadBtn.textContent = '↑ UPLOAD';
+    footer.textContent = `UPLOAD FAILED — ${err.message}`;
+    return;
+  }
+
+  uploadBtn.disabled = false;
+  uploadBtn.textContent = '↑ UPLOAD';
+
+  const account = result.account;
+
+  // Avoid duplicates if user uploads the same file twice
+  if (runtimeAccounts.find(a => a.id === account.id) || ACCOUNTS.find(a => a.id === account.id)) {
+    footer.textContent = `ALREADY LOADED — ${account.name} (${account.id})`;
+    return;
+  }
+
+  runtimeAccounts.push(account);
+  _updateAccountCount();
+
+  // Append a new card to the grid
+  const grid = document.getElementById('ops-grid');
+  grid.insertAdjacentHTML('beforeend', renderCard(account));
+  _wireCardClicks([account]);
+
+  footer.textContent = `UPLOADED — ${account.name} added. Click ANALYZE ALL to run.`;
+}
+
 // ── BATCH ANALYSIS ORCHESTRATION ──
 
 async function runBatchAnalysis() {
@@ -125,8 +201,9 @@ async function runBatchAnalysis() {
 }
 
 async function runWithBackend() {
+  const allAccounts = _allAccounts();
   // Start all cards in "working" state with staggered animation
-  ACCOUNTS.forEach((a, i) => {
+  allAccounts.forEach((a, i) => {
     setTimeout(() => startCardAnimation(a.id), i * 400);
   });
 
@@ -146,7 +223,10 @@ async function runWithBackend() {
 }
 
 function runWithFallback() {
-  ACCOUNTS.forEach((a, i) => {
+  // Only animate accounts that have static fallback data.
+  // Uploaded (runtime) accounts require the backend — skip them in offline mode.
+  const eligible = _allAccounts().filter(a => ACCOUNT_FALLBACK_DATA[a.id]);
+  eligible.forEach((a, i) => {
     setTimeout(() => startCardAnimation(a.id), i * 400);
     setTimeout(() => completeCard(a.id, ACCOUNT_FALLBACK_DATA[a.id]), i * 1800 + 2500);
   });
@@ -241,8 +321,9 @@ function completeCard(accountId, data) {
   totalLeakage += leakNum;
   animateTotalLeakage();
 
-  // Check if all done
-  const allDone = ACCOUNTS.every(a => cardStates[a.id]?.phase === 'done');
+  // Finalize when every account that was started (non-idle) is done
+  const started = _allAccounts().filter(a => cardStates[a.id]?.phase !== 'idle');
+  const allDone = started.length > 0 && started.every(a => cardStates[a.id]?.phase === 'done');
   if (allDone) finalizeBatch();
 }
 
@@ -273,41 +354,80 @@ function finalizeBatch() {
   btn.disabled = false;
   btn.className = 'btn ops-analyze-btn done';
   btn.onclick = () => {
-    // Reset and re-render
+    // Reset and re-render (keep runtime accounts)
     btn.className = 'btn primary ops-analyze-btn';
     btn.textContent = '▶ ANALYZE ALL';
+    document.getElementById('ops-export-btn').style.display = 'none';
     const grid = document.getElementById('ops-grid');
     totalLeakage = 0;
     document.getElementById('ops-total-leakage').textContent = '$0';
-    grid.innerHTML = ACCOUNTS.map(a => renderCard(a)).join('');
-    ACCOUNTS.forEach(a => {
-      const card = document.getElementById(`card-${a.id}`);
-      if (card && onDrillDown) {
-        card.addEventListener('click', () => {
-          if (cardStates[a.id]?.phase === 'done') {
-            onDrillDown(a.id, cardStates[a.id].data);
-          }
-        });
-      }
-    });
-    document.getElementById('ops-footer-text').textContent = `READY — ${ACCOUNTS.length} accounts loaded`;
+    grid.innerHTML = _allAccounts().map(a => renderCard(a)).join('');
+    _wireCardClicks(_allAccounts());
+    const total = _allAccounts().length;
+    document.getElementById('ops-footer-text').textContent = `READY — ${total} accounts loaded`;
     document.getElementById('ops-detection').textContent = '—';
     document.getElementById('ops-confidence').textContent = '—';
   };
 
+  const allAccounts = _allAccounts();
+
   // Update aggregate metrics
-  const withLeakage = ACCOUNTS.filter(a => {
+  const withLeakage = allAccounts.filter(a => {
     const d = cardStates[a.id]?.data;
     const l = parseInt((d?.orch?.output?.net_leakage || '0').replace(/[$,]/g, '')) || 0;
     return l > 0;
   }).length;
-  document.getElementById('ops-detection').textContent = `${withLeakage}/${ACCOUNTS.length}`;
+  document.getElementById('ops-detection').textContent = `${withLeakage}/${allAccounts.length}`;
 
-  const avgConf = ACCOUNTS.reduce((sum, a) => {
-    return sum + (cardStates[a.id]?.data?.orch?.confidence || 0);
-  }, 0) / ACCOUNTS.length;
+  const analyzed = allAccounts.filter(a => cardStates[a.id]?.data);
+  const avgConf = analyzed.length > 0
+    ? analyzed.reduce((sum, a) => sum + (cardStates[a.id]?.data?.orch?.confidence || 0), 0) / analyzed.length
+    : 0;
   document.getElementById('ops-confidence').textContent = Math.round(avgConf * 100) + '%';
 
   document.getElementById('ops-footer-text').textContent =
-    `COMPLETE — $${totalLeakage.toLocaleString()} total leakage detected across ${ACCOUNTS.length} accounts`;
+    `COMPLETE — $${totalLeakage.toLocaleString()} total leakage detected across ${allAccounts.length} accounts`;
+
+  // Show export button and wire it with current analysis snapshot
+  const exportBtn = document.getElementById('ops-export-btn');
+  exportBtn.style.display = '';
+  exportBtn.onclick = () => _handleExportDashboard(allAccounts);
+}
+
+function _handleExportDashboard(allAccounts) {
+  const exportBtn = document.getElementById('ops-export-btn');
+  exportBtn.disabled = true;
+  exportBtn.textContent = '↓ GENERATING…';
+
+  const avgConf = allAccounts.filter(a => cardStates[a.id]?.data)
+    .reduce((s, a) => s + (cardStates[a.id]?.data?.orch?.confidence || 0), 0)
+    / Math.max(allAccounts.filter(a => cardStates[a.id]?.data).length, 1);
+
+  const withLeakage = allAccounts.filter(a => {
+    const l = parseInt((cardStates[a.id]?.data?.orch?.output?.net_leakage || '0').replace(/[$,]/g, '')) || 0;
+    return l > 0;
+  }).length;
+
+  const summary = {
+    total_leakage: totalLeakage,
+    accounts_analyzed: allAccounts.length,
+    accounts_with_leakage: withLeakage,
+    avg_confidence: avgConf,
+  };
+
+  // Build per-account payload: merge account meta with analysis data
+  const accountsPayload = allAccounts
+    .filter(a => cardStates[a.id]?.data)
+    .map(a => ({
+      account_id: a.id,
+      name: a.name,
+      arr: a.arr,
+      tier: a.tier,
+      ...cardStates[a.id].data,
+    }));
+
+  exportDashboardReport(summary, accountsPayload).finally(() => {
+    exportBtn.disabled = false;
+    exportBtn.textContent = '↓ EXPORT REPORT';
+  });
 }

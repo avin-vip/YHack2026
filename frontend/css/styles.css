@@ -738,6 +738,47 @@ header {
   flex-shrink: 0;
 }
 
+.ops-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.ops-upload-btn {
+  font-size: 10px;
+  padding: 9px 16px;
+  color: var(--mid);
+  border-color: var(--rule2);
+  background: transparent;
+  letter-spacing: 0.08em;
+}
+.ops-upload-btn:hover:not(:disabled) {
+  color: var(--acid);
+  border-color: var(--acid);
+  background: var(--acid-dim);
+}
+.ops-upload-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.ops-export-btn {
+  font-size: 10px;
+  padding: 9px 16px;
+  color: var(--cool);
+  border-color: var(--cool);
+  background: var(--cool-dim);
+  letter-spacing: 0.08em;
+}
+.ops-export-btn:hover:not(:disabled) {
+  background: rgba(62,207,170,0.18);
+  box-shadow: 0 0 14px var(--cool-glow);
+}
+.ops-export-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 .ops-analyze-btn {
   font-size: 11px;
   padding: 10px 24px;

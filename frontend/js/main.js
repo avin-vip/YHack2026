@@ -5,7 +5,7 @@ import { state, STEPS, agentData, setAgentData, ACCOUNTS, ACCOUNT_FALLBACK_DATA 
 import { healthCheck, analyzeAccount, transformAnalysisResult } from './api.js';
 import { log, setTermState, setTermOut, setConfidence, setStatus, setSB } from './terminals.js';
 import { drawEdges, activateEdge, setNode, resetEdges } from './graph.js';
-import { updateEmail, updateBillingPayload, updateRankedActions, showReport, giveFeedback, exportReport, copyJSON, resetDock } from './dock.js';
+import { updateEmail, updateBillingPayload, updateRankedActions, showReport, giveFeedback, exportReport, copyJSON, resetDock, sendRecoveryEmail } from './dock.js';
 import { openReasoning, closeReasoning, showActionDetail } from './reasoning.js';
 import { startResize } from './resize.js';
 import { renderOpsView, setDrillDownHandler } from './ops.js';
@@ -21,6 +21,7 @@ window.showActionDetail = showActionDetail;
 window.giveFeedback = giveFeedback;
 window.exportReport = exportReport;
 window.copyJSON = copyJSON;
+window.sendRecoveryEmail = sendRecoveryEmail;
 window.startResize = startResize;
 window.switchMode = switchMode;
 
@@ -85,6 +86,10 @@ function switchMode(mode, accountId, accountData) {
       setAgentData(accountData);
       resetAll();
       updateDetailHeader(accountId);
+      // Store for report generator
+      state.currentAccountId = accountId;
+      const acc = ACCOUNTS.find(a => a.id === accountId);
+      state.currentAccountName = acc?.name || accountId;
     }
 
     // Redraw edges after layout change

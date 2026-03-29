@@ -6,6 +6,11 @@ export const state = {
   autoplay: false,
   autoTimer: null,
   viewMode: 'summary',
+  // Set by main.js when drilling into an account — used by report generator
+  currentAccountId: null,
+  currentAccountName: null,
+  /** Last billing payload shown in the dock (for copy JSON). */
+  lastBillingPayload: null,
 };
 
 export const STEPS = [

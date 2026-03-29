@@ -101,6 +101,68 @@ export async function batchAnalyze() {
 }
 
 /**
+ * Generate dashboard report narrative from analysis results.
+ * @param {object} summary  — { total_leakage, accounts_analyzed, accounts_with_leakage, avg_confidence }
+ * @param {Array}  accounts — array of per-account analysis data (cardStates format)
+ * Returns { narrative, generated_at } or null on failure.
+ */
+export async function generateDashboardReport(summary, accounts) {
+  try {
+    const res = await fetch(`${API_BASE}/reports/dashboard`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ summary, accounts }),
+    });
+    if (!res.ok) return null;
+    return await res.json();
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Generate single-account report narrative from analysis data.
+ * @param {string} accountName
+ * @param {object} analysis — agentData format { contract, usage, billing, orch }
+ * Returns { narrative, generated_at } or null on failure.
+ */
+export async function generateAccountReport(accountName, analysis) {
+  try {
+    const res = await fetch(`${API_BASE}/reports/account`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ account_name: accountName, analysis }),
+    });
+    if (!res.ok) return null;
+    return await res.json();
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Upload a PDF contract file.
+ * Returns { account_id, account, message } or null on failure.
+ */
+export async function uploadContract(file) {
+  try {
+    const form = new FormData();
+    form.append('file', file);
+    const res = await fetch(`${API_BASE}/contracts/upload`, {
+      method: 'POST',
+      body: form,
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || `Upload failed (${res.status})`);
+    }
+    return await res.json();
+  } catch (err) {
+    throw err;
+  }
+}
+
+/**
  * Get audit trail for an account.
  */
 export async function getAuditTrail(accountId) {
