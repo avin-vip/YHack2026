@@ -1,0 +1,51 @@
+{
+  "id": "ctr-cuad-0010",
+  "account_id": "zenith-payments-010",
+  "effective_date": "2024-01-01",
+  "expiration_date": "2025-12-31",
+  "term_months": 24,
+  "pricing_tier": "Starter",
+  "base_fee_monthly": 5000,
+  "usage_limit_monthly": 1000,
+  "usage_unit": "API calls",
+  "overage_rate_per_unit": 0.1,
+  "unit_multiplier": 100,
+  "discount": {
+    "rate": 0.1,
+    "scope": "base_only",
+    "clause": "§12.3",
+    "description": "10% discount applies to base charges only"
+  },
+  "clauses": {
+    "overage": {
+      "section": "§4.2",
+      "text": "Overage rate: $0.10 per unit above monthly limit of 1,000 units. Overage charges are calculated at the end of each billing cycle."
+    },
+    "base_limit": {
+      "section": "§7.1",
+      "text": "Base usage limit: 1,000 units per month. Units are measured as individual API calls aggregated across all endpoints."
+    },
+    "discount_scope": {
+      "section": "§12.3",
+      "text": "Discounts apply to base charges only, not overage or add-on charges. Any discount applied beyond base charges is a billing error and subject to correction."
+    },
+    "termination": {
+      "section": "§9.1",
+      "text": "Either party may terminate with 30 days written notice."
+    },
+    "payment": {
+      "section": "§5.2",
+      "text": "Payment due within 30 days of invoice date."
+    },
+    "governing_law": {
+      "section": "§14.1",
+      "text": "This Agreement shall be governed by and construed in accordance with the laws of the State of New York."
+    }
+  },
+  "legal_terms": {
+    "governing_law": "This Agreement shall be governed by and construed in accordance with the laws of the State of New York."
+  },
+  "total_pages": 21,
+  "signed_by": "CFO, Zenith Payments",
+  "status": "active"
+}

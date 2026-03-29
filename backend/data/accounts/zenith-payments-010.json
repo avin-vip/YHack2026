@@ -1,0 +1,12 @@
+{
+  "id": "zenith-payments-010",
+  "name": "Zenith Payments",
+  "arr": 54000,
+  "tier": "Starter",
+  "contract_id": "ctr-cuad-0010",
+  "primary_contact": "finance@zenithpayments.io",
+  "industry": "Payments Infrastructure",
+  "status": "active",
+  "created_at": "2024-01-01",
+  "region": "US-EAST"
+}
