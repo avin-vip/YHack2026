@@ -1,5 +1,8 @@
 import json
 import os
+from datetime import datetime, timezone
+from typing import Awaitable, Callable
+import inspect
 from pathlib import Path
 
 from app.agents.llm import LLMClient
@@ -11,6 +14,7 @@ from app.services.run_logger import RunLogger
 from app.services.recovery import generate_recovery_package
 
 DATA_DIR = Path(__file__).parent.parent.parent / "data"
+ProgressCallback = Callable[[dict], Awaitable[None] | None]
 
 _AGENT_DISPLAY_NAMES = {
     "contract": "Contract Analyst",
@@ -89,7 +93,36 @@ def _get_llm(agent_name: str, providers: dict | None = None, run_logger: RunLogg
     return LLMClient(provider=provider, run_logger=run_logger, agent_name=display_name)
 
 
-async def run_analysis(account_id: str, providers: dict | None = None) -> dict:
+def _utc_now_iso() -> str:
+    return datetime.now(timezone.utc).isoformat()
+
+
+async def _emit_progress(
+    progress_cb: ProgressCallback | None,
+    account_id: str,
+    stage: str,
+    status: str,
+    **extra: dict,
+) -> None:
+    if not progress_cb:
+        return
+    payload = {
+        "account_id": account_id,
+        "stage": stage,
+        "status": status,
+        "timestamp": _utc_now_iso(),
+        **extra,
+    }
+    maybe_awaitable = progress_cb(payload)
+    if inspect.isawaitable(maybe_awaitable):
+        await maybe_awaitable
+
+
+async def run_analysis(
+    account_id: str,
+    providers: dict | None = None,
+    progress_cb: ProgressCallback | None = None,
+) -> dict:
     """Run the full 4-agent analysis pipeline for an account."""
     run_logger = RunLogger(account_id=account_id)
 
@@ -97,6 +130,7 @@ async def run_analysis(account_id: str, providers: dict | None = None) -> dict:
     contract = account_data["contract"]
 
     # Step 1: Contract Analyst
+    await _emit_progress(progress_cb, account_id, "contract", "started")
     try:
         contract_llm = _get_llm("contract", providers, run_logger)
         contract_agent = ContractAnalyst(contract_llm)
@@ -106,14 +140,23 @@ async def run_analysis(account_id: str, providers: dict | None = None) -> dict:
         })
         contract_result["impact"] = contract.get("base_fee_monthly", 0)
         contract_result["model"] = contract_llm.model_name
+        await _emit_progress(
+            progress_cb,
+            account_id,
+            "contract",
+            "completed",
+            model=contract_llm.model_name,
+        )
     except Exception as e:
         contract_result = _make_error_result(
             "Contract Analyst",
             f"{contract['id']} · {contract['total_pages']}-page PDF agreement",
             str(e),
         )
+        await _emit_progress(progress_cb, account_id, "contract", "failed", error=str(e))
 
     # Step 2: Usage Validator + Billing Auditor (conceptually parallel)
+    await _emit_progress(progress_cb, account_id, "usage", "started")
     try:
         usage_llm = _get_llm("usage", providers, run_logger)
         usage_agent = UsageValidator(usage_llm)
@@ -127,13 +170,22 @@ async def run_analysis(account_id: str, providers: dict | None = None) -> dict:
         unit_multiplier = contract.get("unit_multiplier", 1)
         usage_result["impact"] = overage_units * overage_rate * unit_multiplier
         usage_result["model"] = usage_llm.model_name
+        await _emit_progress(
+            progress_cb,
+            account_id,
+            "usage",
+            "completed",
+            model=usage_llm.model_name,
+        )
     except Exception as e:
         usage_result = _make_error_result(
             "Usage Validator",
             f"{account_data['usage']['source']} · {account_data['usage']['total_rows']} rows · API logs",
             str(e),
         )
+        await _emit_progress(progress_cb, account_id, "usage", "failed", error=str(e))
 
+    await _emit_progress(progress_cb, account_id, "billing", "started")
     try:
         billing_llm = _get_llm("billing", providers, run_logger)
         billing_agent = BillingAuditor(billing_llm)
@@ -144,14 +196,23 @@ async def run_analysis(account_id: str, providers: dict | None = None) -> dict:
         })
         billing_result["impact"] = account_data["invoice"].get("total", 0)
         billing_result["model"] = billing_llm.model_name
+        await _emit_progress(
+            progress_cb,
+            account_id,
+            "billing",
+            "completed",
+            model=billing_llm.model_name,
+        )
     except Exception as e:
         billing_result = _make_error_result(
             "Billing Auditor",
             f"{account_data['invoice']['id']} · ${account_data['invoice']['total']:,} issued",
             str(e),
         )
+        await _emit_progress(progress_cb, account_id, "billing", "failed", error=str(e))
 
     # Step 3: Orchestrator
+    await _emit_progress(progress_cb, account_id, "orch", "started")
     try:
         orch_llm = _get_llm("orch", providers, run_logger)
         orch_agent = Orchestrator(orch_llm)
@@ -165,12 +226,20 @@ async def run_analysis(account_id: str, providers: dict | None = None) -> dict:
         net_leakage_str = orch_result.get("output", {}).get("net_leakage", "0")
         orch_result["impact"] = _parse_dollar_amount(net_leakage_str)
         orch_result["model"] = orch_llm.model_name
+        await _emit_progress(
+            progress_cb,
+            account_id,
+            "orch",
+            "completed",
+            model=orch_llm.model_name,
+        )
     except Exception as e:
         orch_result = _make_error_result(
             "Orchestrator",
             "All 3 agent outputs · shared context",
             str(e),
         )
+        await _emit_progress(progress_cb, account_id, "orch", "failed", error=str(e))
 
     log_path = run_logger.save()
 
@@ -192,6 +261,7 @@ async def run_analysis(account_id: str, providers: dict | None = None) -> dict:
         "audit_trail": _build_audit_trail(contract_result, usage_result, billing_result, orch_result),
     }
     result["recovery_package"] = generate_recovery_package(result)
+    await _emit_progress(progress_cb, account_id, "analysis", "completed")
     return result
 
 

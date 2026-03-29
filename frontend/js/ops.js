@@ -2,15 +2,11 @@
 // Grid of parallel analysis pipelines with aggregate metrics.
 
 import { ACCOUNTS, ACCOUNT_FALLBACK_DATA, getModelSelectionsForAccount } from './state.js';
-import { healthCheck, analyzeAccount, listAccounts, transformAnalysisResult } from './api.js';
-
-const AGENT_KEYS = ['contract', 'usage', 'billing', 'orch'];
-const AGENT_LABELS = { contract: 'C', usage: 'U', billing: 'B', orch: 'O' };
+import { healthCheck, transformAnalysisResult, streamBatchAnalyze } from './api.js';
 
 // Per-card state
 let cardStates = {};
 let totalLeakage = 0;
-let animatingTotal = false;
 
 // Callback when user clicks a card to drill into single-account view
 let onDrillDown = null;
@@ -79,7 +75,16 @@ function renderCard(account) {
     ? '$' + (account.arr / 1000000).toFixed(1) + 'M'
     : '$' + arrK + 'K';
 
-  cardStates[account.id] = { phase: 'idle', data: null };
+  cardStates[account.id] = {
+    phase: 'idle',
+    data: null,
+    stages: {
+      contract: 'idle',
+      usage: 'idle',
+      billing: 'idle',
+      orch: 'idle',
+    },
+  };
 
   return `
     <div class="ops-card" id="card-${account.id}">
@@ -125,17 +130,30 @@ async function runBatchAnalysis() {
 }
 
 async function runWithBackend() {
-  // Start all cards immediately and dispatch all account analyses in parallel.
-  ACCOUNTS.forEach(a => startCardAnimation(a.id));
+  // Initialize all cards into a running state with Contract stage active.
+  ACCOUNTS.forEach(a => startCardLive(a.id));
 
-  const analysisPromises = ACCOUNTS.map(async (account) => {
-    const providers = getModelSelectionsForAccount(account.id);
-    const backendResult = await analyzeAccount(account.id, providers);
-    const transformed = transformAnalysisResult(backendResult);
-    completeCard(account.id, transformed || ACCOUNT_FALLBACK_DATA[account.id]);
+  const providersByAccount = {};
+  ACCOUNTS.forEach(account => {
+    providersByAccount[account.id] = getModelSelectionsForAccount(account.id);
   });
 
-  await Promise.allSettled(analysisPromises);
+  await streamBatchAnalyze(
+    { accounts: ACCOUNTS.map(a => a.id), providers_by_account: providersByAccount },
+    {
+      onEvent: (eventName, data) => handleBatchEvent(eventName, data),
+      onError: () => {
+        document.getElementById('ops-footer-text').textContent = 'ERROR — Live progress stream interrupted';
+        const btn = document.getElementById('ops-analyze-btn');
+        btn.textContent = '↻ RUN AGAIN';
+        btn.disabled = false;
+        btn.className = 'btn ops-analyze-btn done';
+      },
+      onDone: () => {
+        // No-op; finalizeBatch is triggered by card completion checks.
+      },
+    }
+  );
 }
 
 function runWithFallback() {
@@ -143,6 +161,30 @@ function runWithFallback() {
     setTimeout(() => startCardAnimation(a.id), i * 400);
     setTimeout(() => completeCard(a.id, ACCOUNT_FALLBACK_DATA[a.id]), i * 1800 + 2500);
   });
+}
+
+function startCardLive(accountId) {
+  const card = document.getElementById(`card-${accountId}`);
+  if (!card) return;
+
+  card.classList.remove('complete', 'failed');
+  card.classList.add('analyzing');
+
+  const status = document.getElementById(`card-status-${accountId}`);
+  status.textContent = 'ANALYZING';
+  status.className = 'ops-card-status working';
+
+  cardStates[accountId].phase = 'running';
+  cardStates[accountId].stages = {
+    contract: 'idle',
+    usage: 'idle',
+    billing: 'idle',
+    orch: 'idle',
+  };
+
+  ['contract', 'usage', 'billing', 'orch'].forEach(stage => setStageState(accountId, stage, 'idle'));
+  [0, 1, 2].forEach(idx => setEdgeState(accountId, idx, false));
+  setStageState(accountId, 'contract', 'working');
 }
 
 function startCardAnimation(accountId) {
@@ -187,6 +229,119 @@ function animateEdge(accountId, idx, delay) {
     const edge = document.getElementById(`edge-${accountId}-${idx}`);
     if (edge) edge.classList.add('active');
   }, delay);
+}
+
+function setStageState(accountId, stage, state) {
+  const node = document.getElementById(`node-${accountId}-${stage}`);
+  if (!node) return;
+  node.classList.remove('working', 'complete', 'error');
+  if (state === 'working' || state === 'complete' || state === 'error') {
+    node.classList.add(state);
+  }
+  if (cardStates[accountId]?.stages) {
+    cardStates[accountId].stages[stage] = state;
+  }
+}
+
+function setEdgeState(accountId, idx, active) {
+  const edge = document.getElementById(`edge-${accountId}-${idx}`);
+  if (!edge) return;
+  edge.classList.toggle('active', !!active);
+}
+
+function maybeStartOrch(accountId) {
+  const stages = cardStates[accountId]?.stages;
+  if (!stages) return;
+  if (stages.usage === 'complete' && stages.billing === 'complete' && stages.orch === 'idle') {
+    setStageState(accountId, 'orch', 'working');
+    setEdgeState(accountId, 2, true);
+  }
+}
+
+function failCard(accountId, errorMessage) {
+  const card = document.getElementById(`card-${accountId}`);
+  if (!card || cardStates[accountId]?.phase === 'failed' || cardStates[accountId]?.phase === 'done') return;
+
+  card.classList.remove('analyzing');
+  card.classList.add('failed');
+  cardStates[accountId].phase = 'failed';
+
+  const status = document.getElementById(`card-status-${accountId}`);
+  status.textContent = 'FAILED';
+  status.className = 'ops-card-status failed';
+
+  const resultEl = document.getElementById(`card-result-${accountId}`);
+  resultEl.innerHTML = `
+    <div class="ops-result-placeholder" style="color: var(--hot);">
+      Analysis failed${errorMessage ? `: ${String(errorMessage).slice(0, 120)}` : '.'}
+    </div>
+  `;
+
+  const allFinished = ACCOUNTS.every(a => ['done', 'failed'].includes(cardStates[a.id]?.phase));
+  if (allFinished) finalizeBatch();
+}
+
+function handleBatchEvent(eventName, data) {
+  if (!data) return;
+  const accountId = data.account_id;
+
+  if (eventName === 'account_started') {
+    if (accountId) startCardLive(accountId);
+    return;
+  }
+
+  if (eventName === 'stage_update' && accountId) {
+    const stage = data.stage;
+    const status = data.status;
+    if (!stage || !status) return;
+
+    if (stage === 'analysis' && status === 'completed') return;
+    if (!cardStates[accountId] || cardStates[accountId].phase !== 'running') return;
+
+    if (status === 'started') {
+      if (stage === 'usage' || stage === 'billing') {
+        setStageState(accountId, stage, 'working');
+      } else if (stage === 'contract' || stage === 'orch') {
+        setStageState(accountId, stage, 'working');
+      }
+      return;
+    }
+
+    if (status === 'completed') {
+      setStageState(accountId, stage, 'complete');
+      if (stage === 'contract') {
+        setEdgeState(accountId, 0, true);
+        setEdgeState(accountId, 1, true);
+      }
+      if (stage === 'usage' || stage === 'billing') {
+        maybeStartOrch(accountId);
+      }
+      return;
+    }
+
+    if (status === 'failed') {
+      setStageState(accountId, stage, 'error');
+      failCard(accountId, data.error || 'Stage failed');
+    }
+    return;
+  }
+
+  if (eventName === 'account_completed' && accountId) {
+    if (cardStates[accountId]?.phase === 'done' || cardStates[accountId]?.phase === 'failed') return;
+    const transformed = transformAnalysisResult(data.result);
+    completeCard(accountId, transformed || ACCOUNT_FALLBACK_DATA[accountId]);
+    return;
+  }
+
+  if (eventName === 'account_failed' && accountId) {
+    failCard(accountId, data.error || 'Account analysis failed');
+    return;
+  }
+
+  if (eventName === 'batch_completed' && data.summary) {
+    document.getElementById('ops-footer-text').textContent =
+      `COMPLETE — $${(data.summary.total_leakage || 0).toLocaleString()} total leakage detected across ${data.summary.accounts_analyzed || ACCOUNTS.length} accounts`;
+  }
 }
 
 function completeCard(accountId, data) {
@@ -235,8 +390,8 @@ function completeCard(accountId, data) {
   animateTotalLeakage();
 
   // Check if all done
-  const allDone = ACCOUNTS.every(a => cardStates[a.id]?.phase === 'done');
-  if (allDone) finalizeBatch();
+  const allFinished = ACCOUNTS.every(a => ['done', 'failed'].includes(cardStates[a.id]?.phase));
+  if (allFinished) finalizeBatch();
 }
 
 function animateTotalLeakage() {

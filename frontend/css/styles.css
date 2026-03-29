@@ -836,6 +836,11 @@ header {
   box-shadow: 0 0 8px var(--cool-glow);
 }
 
+.ops-card.failed::before {
+  background: var(--hot);
+  box-shadow: 0 0 8px var(--hot-glow);
+}
+
 .ops-card.complete:hover {
   border-color: var(--cool);
   box-shadow: 0 0 24px rgba(62,207,170,0.08);
@@ -875,6 +880,12 @@ header {
   color: var(--cool);
   background: var(--cool-dim);
   border-color: var(--cool);
+  animation: none;
+}
+.ops-card-status.failed {
+  color: var(--hot);
+  background: var(--hot-dim);
+  border-color: var(--hot);
   animation: none;
 }
 
@@ -931,6 +942,13 @@ header {
   border-color: var(--cool);
   color: var(--cool);
   box-shadow: 0 0 10px var(--cool-glow);
+  animation: none;
+}
+
+.ops-node.error {
+  border-color: var(--hot);
+  color: var(--hot);
+  box-shadow: 0 0 10px var(--hot-glow);
   animation: none;
 }
 

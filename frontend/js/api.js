@@ -104,6 +104,70 @@ export async function batchAnalyze() {
 }
 
 /**
+ * Run batch analysis with live stage updates over SSE.
+ * Uses fetch streaming to support POST request bodies.
+ */
+export async function streamBatchAnalyze(payload, { onEvent, onError, onDone } = {}) {
+  try {
+    const res = await fetch(`${API_BASE}/batch-analyze-stream`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload || {}),
+    });
+
+    if (!res.ok || !res.body) {
+      throw new Error(`Batch stream failed with status ${res.status}`);
+    }
+
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+
+    const processBlock = (block) => {
+      if (!block || !block.trim()) return;
+      const lines = block.split('\n');
+      let eventName = 'message';
+      const dataLines = [];
+
+      for (const line of lines) {
+        if (line.startsWith('event:')) {
+          eventName = line.slice('event:'.length).trim();
+        } else if (line.startsWith('data:')) {
+          dataLines.push(line.slice('data:'.length).trim());
+        }
+      }
+
+      if (dataLines.length === 0) return;
+
+      let data = null;
+      try {
+        data = JSON.parse(dataLines.join('\n'));
+      } catch {
+        data = null;
+      }
+      if (onEvent) onEvent(eventName, data);
+    };
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      buffer += decoder.decode(value, { stream: true });
+      const blocks = buffer.split('\n\n');
+      buffer = blocks.pop() || '';
+      blocks.forEach(processBlock);
+    }
+
+    if (buffer.trim()) processBlock(buffer);
+    if (onDone) onDone();
+    return true;
+  } catch (err) {
+    if (onError) onError(err);
+    return false;
+  }
+}
+
+/**
  * Get audit trail for an account.
  */
 export async function getAuditTrail(accountId) {
