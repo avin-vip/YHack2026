@@ -19,11 +19,11 @@ function doResize(e) {
 
   if (resizeDrag.side === 'left') {
     const panel = document.getElementById('panelLeft');
-    const newW = Math.max(180, Math.min(360, panel.offsetWidth + delta));
+    const newW = Math.max(220, Math.min(460, panel.offsetWidth + delta));
     panel.style.width = newW + 'px';
   } else {
     const panel = document.getElementById('panelRight');
-    const newW = Math.max(170, Math.min(380, panel.offsetWidth - delta));
+    const newW = Math.max(220, Math.min(460, panel.offsetWidth - delta));
     panel.style.width = newW + 'px';
   }
   drawEdges();

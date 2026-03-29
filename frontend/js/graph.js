@@ -2,21 +2,68 @@
 
 let edgeIds = {};
 
-export function getNodePos(id) {
+const BASELINE_LEFT_WIDTH = 250;
+const BASELINE_RIGHT_WIDTH = 230;
+const NODE_X_RATIO = {
+  contract: 0.5,
+  usage: 0.27,
+  billing: 0.73,
+  orch: 0.5,
+};
+const NODE_Y_RATIO = {
+  contract: 0.2,
+  usage: 0.54,
+  billing: 0.54,
+  orch: 0.81,
+};
+
+function getGraphLayoutMetrics() {
   const area = document.getElementById('graphArea');
-  const W = area.offsetWidth, H = area.offsetHeight;
-  const map = {
-    contract: { x: W * 0.5, y: H * 0.20 },
-    usage:    { x: W * 0.27, y: H * 0.54 },
-    billing:  { x: W * 0.73, y: H * 0.54 },
-    orch:     { x: W * 0.5, y: H * 0.81 },
-  };
-  return map[id];
+  const leftPanel = document.getElementById('panelLeft');
+  const rightPanel = document.getElementById('panelRight');
+
+  if (!area) return null;
+
+  const W = area.offsetWidth;
+  const H = area.offsetHeight;
+  const leftW = leftPanel ? leftPanel.offsetWidth : BASELINE_LEFT_WIDTH;
+  const rightW = rightPanel ? rightPanel.offsetWidth : BASELINE_RIGHT_WIDTH;
+  const totalW = leftW + W + rightW;
+  const baselineCenterW = Math.max(1, totalW - BASELINE_LEFT_WIDTH - BASELINE_RIGHT_WIDTH);
+
+  return { W, H, leftW, baselineCenterW };
+}
+
+export function getNodePos(id) {
+  const metrics = getGraphLayoutMetrics();
+  if (!metrics) return { x: 0, y: 0 };
+
+  const { W, H, leftW, baselineCenterW } = metrics;
+  const xRatio = NODE_X_RATIO[id] ?? 0.5;
+  const yRatio = NODE_Y_RATIO[id] ?? 0.5;
+
+  // Preserve prior screen-space node x positions even when side panel widths change.
+  const baselineAbsX = BASELINE_LEFT_WIDTH + baselineCenterW * xRatio;
+  const x = Math.max(0, Math.min(W, baselineAbsX - leftW));
+  const y = H * yRatio;
+
+  return { x, y };
+}
+
+function layoutNodes() {
+  ['contract', 'usage', 'billing', 'orch'].forEach(id => {
+    const node = document.getElementById('node-' + id);
+    if (!node) return;
+    const pos = getNodePos(id);
+    node.style.left = `${pos.x}px`;
+    node.style.top = `${pos.y}px`;
+  });
 }
 
 export function drawEdges() {
   const svg = document.getElementById('graph-svg');
   const area = document.getElementById('graphArea');
+  layoutNodes();
   const W = area.offsetWidth, H = area.offsetHeight;
   svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
 

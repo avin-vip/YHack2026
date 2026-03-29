@@ -222,9 +222,9 @@ header {
   overflow: hidden; flex-shrink: 0;
   position: relative;
 }
-.panel-left { width: 250px; min-width: 180px; max-width: 360px; border-right: 1px solid var(--rule); }
+.panel-left { width: 460px; min-width: 220px; max-width: 460px; border-right: 1px solid var(--rule); }
 .panel-center { flex: 1; min-width: 300px; overflow: hidden; }
-.panel-right { width: 230px; min-width: 170px; max-width: 380px; border-left: 1px solid var(--rule); }
+.panel-right { width: 460px; min-width: 220px; max-width: 460px; border-left: 1px solid var(--rule); }
 
 .resize-handle {
   position: absolute; top: 0; bottom: 0;
@@ -549,9 +549,18 @@ header {
 .key-badge { padding: 5px 12px; border: 1px solid var(--rule2); font-size: 9px; color: var(--mid); letter-spacing: 0.08em; background: var(--ink3); }
 
 /* ── RIGHT DOCK ── */
-.dock { display: flex; flex-direction: column; height: 100%; overflow: hidden; }
+.dock {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.dock::-webkit-scrollbar { width: 0; height: 0; display: none; }
 .dock-section { border-bottom: 1px solid var(--rule); overflow: hidden; flex-shrink: 0; }
-.dock-section.grow { flex: 1; overflow-y: auto; }
+.dock-section.grow { flex: 0 0 auto; overflow: hidden; }
 .dock-section::-webkit-scrollbar { width: 2px; }
 .dock-section::-webkit-scrollbar-thumb { background: var(--rule2); }
 
@@ -1067,3 +1076,59 @@ header {
   color: var(--dim);
   letter-spacing: 0.1em;
 }
+
+/* ── DETAIL MODE TYPOGRAPHY SCALE ── */
+body.detail-text-lg #detailView .term-agent { font-size: 14px; }
+body.detail-text-lg #detailView .term-state { font-size: 13px; }
+body.detail-text-lg #detailView .conf-label { font-size: 12px; }
+body.detail-text-lg #detailView .term-body { font-size: 13px; line-height: 1.9; }
+body.detail-text-lg #detailView .term-output { font-size: 14px; }
+body.detail-text-lg #detailView .score-badge { font-size: 12px; }
+
+body.detail-text-lg #detailView .node-id { font-size: 11px; }
+body.detail-text-lg #detailView .node-model { font-size: 11px; }
+body.detail-text-lg #detailView .node-val { font-size: 13px; }
+
+body.detail-text-lg #detailView .rp-title { font-size: 15px; }
+body.detail-text-lg #detailView .rp-section-title { font-size: 12px; }
+body.detail-text-lg #detailView .rp-row { font-size: 13px; }
+body.detail-text-lg #detailView .rp-key { font-size: 13px; width: 96px; }
+body.detail-text-lg #detailView .rp-close { font-size: 15px; }
+
+body.detail-text-lg #detailView .dock-header { font-size: 12px; }
+body.detail-text-lg #detailView .dock-tag { font-size: 11px; }
+body.detail-text-lg #detailView .dock-body { font-size: 13px; line-height: 1.85; }
+body.detail-text-lg #detailView .dock-body .field-key { width: 68px; }
+body.detail-text-lg #detailView .ai-name { font-size: 13px; }
+body.detail-text-lg #detailView .ai-score { font-size: 12px; }
+body.detail-text-lg #detailView .ai-desc { font-size: 12px; }
+body.detail-text-lg #detailView .ai-amount { font-size: 13px; }
+body.detail-text-lg #detailView .json-pre { font-size: 12px; line-height: 1.9; }
+body.detail-text-lg #detailView .copy-btn { font-size: 11px; }
+
+body.detail-text-lg #detailView .report-title { font-size: 13px; }
+body.detail-text-lg #detailView .report-key { font-size: 12px; width: 112px; }
+body.detail-text-lg #detailView .report-val { font-size: 13px; }
+body.detail-text-lg #detailView .report-btn { font-size: 13px; padding: 8px 12px; }
+body.detail-text-lg #detailView .feedback-bar { font-size: 13px; }
+body.detail-text-lg #detailView .fb-btn { font-size: 12px; }
+body.detail-text-lg #detailView .fb-result { font-size: 13px; }
+body.detail-text-lg #detailView .nav-hint { font-size: 13px; }
+body.detail-text-lg #detailView .key-badge { font-size: 13px; }
+
+body.detail-text-lg #detail-controls { font-size: 14px; }
+body.detail-text-lg .step-pill { font-size: 14px; }
+body.detail-text-lg .step-pill .step-hint { font-size: 13px; max-width: 260px; line-height: 1.4; }
+body.detail-text-lg .autoplay-toggle { font-size: 13px; }
+body.detail-text-lg .hd-controls .btn { font-size: 14px; }
+body.detail-text-lg .statusbar { font-size: 13px; }
+
+/* ── OPS MODE TYPOGRAPHY SCALE (non-card only) ── */
+body.ops-text-lg .statusbar { font-size: 13px; }
+body.ops-text-lg .ops-header { padding: 18px 24px; }
+body.ops-text-lg .ops-metric-label { font-size: 10px; }
+body.ops-text-lg .ops-metric-value { font-size: 40px; }
+body.ops-text-lg .ops-analyze-btn { font-size: 14px; padding: 12px 28px; }
+body.ops-text-lg #ops-upload-btn,
+body.ops-text-lg #ops-export-btn { font-size: 12px; padding: 10px 16px; }
+body.ops-text-lg .ops-footer-text { font-size: 12px; }

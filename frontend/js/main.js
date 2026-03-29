@@ -107,6 +107,8 @@ function setView(mode) {
 // ── MODE SWITCH (ops/detail) ──
 function switchMode(mode, accountId, accountData) {
   currentMode = mode;
+  document.body.classList.toggle('detail-text-lg', mode === 'detail');
+  document.body.classList.toggle('ops-text-lg', mode === 'ops');
   const body = document.getElementById('mainBody');
   const detailView = document.getElementById('detailView');
   const opsContainer = document.getElementById('opsContainer');
@@ -143,6 +145,12 @@ function switchMode(mode, accountId, accountData) {
     });
     document.getElementById('back-btn').style.display = '';
     document.getElementById('advBtn').style.display = '';
+
+    // Always enter detail mode with side panels at max width.
+    const panelLeft = document.getElementById('panelLeft');
+    const panelRight = document.getElementById('panelRight');
+    if (panelLeft) panelLeft.style.width = '460px';
+    if (panelRight) panelRight.style.width = '460px';
 
     if (accountId) {
       currentAccountId = accountId;
