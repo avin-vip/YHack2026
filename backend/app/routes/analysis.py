@@ -82,7 +82,7 @@ async def batch_analyze():
     for r in results:
         leak = r.get("leakage", {})
         net = leak.get("net_leakage", "0")
-        amount = int(str(net).replace("$", "").replace(",", "").strip() or "0")
+        amount = float(str(net).replace("$", "").replace(",", "").strip() or "0")
         if amount > 0:
             accounts_with_leakage += 1
             total_leakage += amount
@@ -173,7 +173,7 @@ async def batch_analyze_stream(request: Optional[BatchAnalyzeStreamRequest] = No
         for r in results:
             leak = r.get("leakage", {})
             net = leak.get("net_leakage", "0")
-            amount = int(str(net).replace("$", "").replace(",", "").strip() or "0")
+            amount = float(str(net).replace("$", "").replace(",", "").strip() or "0")
             if amount > 0:
                 accounts_with_leakage += 1
                 total_leakage += amount

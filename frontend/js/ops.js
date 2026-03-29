@@ -11,6 +11,23 @@ let totalLeakage = 0;
 // Callback when user clicks a card to drill into single-account view
 let onDrillDown = null;
 
+function parseCurrency(value) {
+  if (typeof value === 'number') return value;
+  if (value == null) return 0;
+  const raw = String(value).trim();
+  if (!raw) return 0;
+  const normalized = raw.startsWith('-$')
+    ? `-${raw.slice(2)}`
+    : raw.replace('$', '');
+  const parsed = Number.parseFloat(normalized.replace(/,/g, ''));
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function formatCurrency2(value) {
+  const amount = parseCurrency(value);
+  return amount.toLocaleString('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
 export function setDrillDownHandler(fn) {
   onDrillDown = fn;
 }
@@ -30,7 +47,7 @@ export function renderOpsView(container) {
           <div class="ops-metric-sep"></div>
           <div class="ops-metric">
             <div class="ops-metric-label">TOTAL LEAKAGE</div>
-            <div class="ops-metric-value hot" id="ops-total-leakage">$0</div>
+            <div class="ops-metric-value hot" id="ops-total-leakage">${formatCurrency2(0)}</div>
           </div>
           <div class="ops-metric-sep"></div>
           <div class="ops-metric">
@@ -340,7 +357,7 @@ function handleBatchEvent(eventName, data) {
 
   if (eventName === 'batch_completed' && data.summary) {
     document.getElementById('ops-footer-text').textContent =
-      `COMPLETE — $${(data.summary.total_leakage || 0).toLocaleString()} total leakage detected across ${data.summary.accounts_analyzed || ACCOUNTS.length} accounts`;
+      `COMPLETE — ${formatCurrency2(data.summary.total_leakage || 0)} total leakage detected across ${data.summary.accounts_analyzed || ACCOUNTS.length} accounts`;
   }
 }
 
@@ -360,8 +377,8 @@ function completeCard(accountId, data) {
   status.className = 'ops-card-status done';
 
   // Extract leakage
-  const leakStr = data.orch?.output?.net_leakage || '$0';
-  const leakNum = parseInt(leakStr.replace(/[$,]/g, '')) || 0;
+  const leakNum = parseCurrency(data.orch?.output?.net_leakage || 0);
+  const leakStr = formatCurrency2(leakNum);
   const conf = data.orch?.confidence || 0;
   const urgency = data.orch?.output?.urgency || 'MEDIUM';
 
@@ -400,7 +417,7 @@ function animateTotalLeakage() {
 
   // Rapid counter animation
   const target = totalLeakage;
-  const start = parseInt(el.textContent.replace(/[$,]/g, '')) || 0;
+  const start = parseCurrency(el.textContent) || 0;
   const diff = target - start;
   const steps = 30;
   let step = 0;
@@ -410,7 +427,7 @@ function animateTotalLeakage() {
     const progress = step / steps;
     const eased = 1 - Math.pow(1 - progress, 3);
     const current = Math.round(start + diff * eased);
-    el.textContent = '$' + current.toLocaleString();
+    el.textContent = formatCurrency2(current);
     if (step >= steps) clearInterval(iv);
   }, 18);
 }
@@ -426,7 +443,7 @@ function finalizeBatch() {
     btn.textContent = '▶ ANALYZE ALL';
     const grid = document.getElementById('ops-grid');
     totalLeakage = 0;
-    document.getElementById('ops-total-leakage').textContent = '$0';
+    document.getElementById('ops-total-leakage').textContent = formatCurrency2(0);
     grid.innerHTML = ACCOUNTS.map(a => renderCard(a)).join('');
     ACCOUNTS.forEach(a => {
       const card = document.getElementById(`card-${a.id}`);
@@ -444,7 +461,7 @@ function finalizeBatch() {
   // Update aggregate metrics
   const withLeakage = ACCOUNTS.filter(a => {
     const d = cardStates[a.id]?.data;
-    const l = parseInt((d?.orch?.output?.net_leakage || '0').replace(/[$,]/g, '')) || 0;
+    const l = parseCurrency(d?.orch?.output?.net_leakage || 0);
     return l > 0;
   }).length;
   document.getElementById('ops-detection').textContent = `${withLeakage}/${ACCOUNTS.length}`;
@@ -455,5 +472,5 @@ function finalizeBatch() {
   document.getElementById('ops-confidence').textContent = Math.round(avgConf * 100) + '%';
 
   document.getElementById('ops-footer-text').textContent =
-    `COMPLETE — $${totalLeakage.toLocaleString()} total leakage detected across ${ACCOUNTS.length} accounts`;
+    `COMPLETE — ${formatCurrency2(totalLeakage)} total leakage detected across ${ACCOUNTS.length} accounts`;
 }

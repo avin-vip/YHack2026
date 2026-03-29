@@ -33,6 +33,23 @@ let currentAccountId = 'acme-ent-90210';
 // 'ops' = multi-account grid view, 'detail' = single-account step-through
 let currentMode = 'ops';
 
+function parseCurrency(value) {
+  if (typeof value === 'number') return value;
+  if (value == null) return 0;
+  const raw = String(value).trim();
+  if (!raw) return 0;
+  const normalized = raw.startsWith('-$')
+    ? `-${raw.slice(2)}`
+    : raw.replace('$', '');
+  const parsed = Number.parseFloat(normalized.replace(/,/g, ''));
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function formatCurrency2(value) {
+  const amount = parseCurrency(value);
+  return amount.toLocaleString('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
 function renderNodeModelLabels() {
   ['contract', 'usage', 'billing', 'orch'].forEach(id => {
     const nmEl = document.getElementById('nm-' + id);
@@ -116,14 +133,14 @@ function switchMode(mode, accountId, accountData) {
 }
 
 function hydrateDetailFromCompletedData() {
-  const netLeakage = agentData.orch?.output?.net_leakage || '$0';
+  const netLeakage = formatCurrency2(agentData.orch?.output?.net_leakage || 0);
   const expectedRevenue = agentData.contract?.output?.expected_revenue || '$0/mo';
   const usageOverage = agentData.usage?.output?.overage || '0 units';
   const invoiceTotal = agentData.billing?.output?.invoice_total || '$0';
 
   document.getElementById('idle-overlay').classList.add('hidden');
   document.getElementById('leakage-overlay').classList.remove('show');
-  document.getElementById('leakageNum').textContent = '$0';
+  document.getElementById('leakageNum').textContent = formatCurrency2(0);
 
   state.currentStep = 5;
   state.modelsLocked = true;
@@ -315,9 +332,9 @@ const stepFns = [
     const bImpact = agentData.billing.impact;
     const avgConf = ((cConf + uConf + bConf) / 3 * 100).toFixed(1);
 
-    const netLeakageStr = (agentData.orch.output && agentData.orch.output.net_leakage) || '$21,250';
-    const netLeakageNum = parseFloat(netLeakageStr.replace(/[$,]/g, '')) || 21250;
-    const leakageFormatted = '$' + netLeakageNum.toLocaleString();
+    const netLeakageStr = (agentData.orch.output && agentData.orch.output.net_leakage) || '$21,250.00';
+    const netLeakageNum = parseCurrency(netLeakageStr) || 21250;
+    const leakageFormatted = formatCurrency2(netLeakageNum);
     const impactScore = Math.round(agentData.orch.confidence * netLeakageNum);
 
     setTermState('orch', 'active', 'CALCULATING');
@@ -347,7 +364,7 @@ const stepFns = [
       const inc = target / 50;
       const iv = setInterval(() => {
         cur = Math.min(cur + inc, target);
-        document.getElementById('leakageNum').textContent = '$' + Math.round(cur).toLocaleString();
+        document.getElementById('leakageNum').textContent = formatCurrency2(cur);
         if (cur >= target) clearInterval(iv);
       }, 22);
     }, 2500);
@@ -355,9 +372,9 @@ const stepFns = [
 
   // Step 4: Execute recovery
   function step4() {
-    const netLeakageStr = (agentData.orch.output && agentData.orch.output.net_leakage) || '$21,250';
-    const netLeakageNum = parseFloat(netLeakageStr.replace(/[$,]/g, '')) || 21250;
-    const leakageFormatted = '$' + netLeakageNum.toLocaleString();
+    const netLeakageStr = (agentData.orch.output && agentData.orch.output.net_leakage) || '$21,250.00';
+    const netLeakageNum = parseCurrency(netLeakageStr) || 21250;
+    const leakageFormatted = formatCurrency2(netLeakageNum);
 
     document.getElementById('leakage-overlay').classList.remove('show');
     setTermOut('orch', 'LEAKAGE: ' + leakageFormatted + ' CONFIRMED', 'hot');
@@ -393,9 +410,9 @@ const stepFns = [
 
   // Step 5: Complete
   function step5() {
-    const netLeakageStr = (agentData.orch.output && agentData.orch.output.net_leakage) || '$21,250';
-    const netLeakageNum = parseFloat(netLeakageStr.replace(/[$,]/g, '')) || 21250;
-    const leakageFormatted = '$' + netLeakageNum.toLocaleString();
+    const netLeakageStr = (agentData.orch.output && agentData.orch.output.net_leakage) || '$21,250.00';
+    const netLeakageNum = parseCurrency(netLeakageStr) || 21250;
+    const leakageFormatted = formatCurrency2(netLeakageNum);
     const leakageK = '$' + (netLeakageNum / 1000).toFixed(0) + 'K';
 
     setStatus('RECOVERY COMPLETE', 'done');
@@ -510,7 +527,7 @@ function resetAll() {
 
   document.getElementById('idle-overlay').classList.remove('hidden');
   document.getElementById('leakage-overlay').classList.remove('show');
-  document.getElementById('leakageNum').textContent = '$0';
+  document.getElementById('leakageNum').textContent = formatCurrency2(0);
   resetEdges();
   resetDock();
 

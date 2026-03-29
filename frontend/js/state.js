@@ -138,7 +138,7 @@ export let agentData = {
   orch: {
     role: 'Orchestrator',
     input: 'All 3 agent outputs · shared context',
-    output: { expected: '$85,000', actual_billed: '$63,750', net_leakage: '$21,250', recovery_probability: '0.85', urgency: 'HIGH' },
+    output: { expected: '$85,000', actual_billed: '$63,750', net_leakage: '$21,250.00', recovery_probability: '0.85', urgency: 'HIGH' },
     confidence: 0.917,
     impact: 21250,
     evidence: ['Contract: $85K expected', 'Usage: 840 overage units underbilled', 'Billing: discount misapplied to overages'],
@@ -197,7 +197,7 @@ export const ACCOUNT_FALLBACK_DATA = {
     orch: {
       role: 'Orchestrator',
       input: 'All 3 agent outputs · shared context',
-      output: { expected: '$85,000', actual_billed: '$63,750', net_leakage: '$21,250', recovery_probability: '0.85', urgency: 'HIGH' },
+      output: { expected: '$85,000', actual_billed: '$63,750', net_leakage: '$21,250.00', recovery_probability: '0.85', urgency: 'HIGH' },
       confidence: 0.917, impact: 21250,
       evidence: ['Contract: $85K expected', 'Usage: 840 overage units underbilled', 'Billing: discount misapplied to overages'],
       reasoning: ['Aggregated all 3 agent outputs', 'Net leakage: $21,250', 'Recovery probability 85%'],
@@ -231,7 +231,7 @@ export const ACCOUNT_FALLBACK_DATA = {
     orch: {
       role: 'Orchestrator',
       input: 'All 3 agent outputs · shared context',
-      output: { expected: '$42,000', actual_billed: '$35,700', net_leakage: '$15,100', recovery_probability: '0.82', urgency: 'HIGH' },
+      output: { expected: '$42,000', actual_billed: '$35,700', net_leakage: '$15,100.00', recovery_probability: '0.82', urgency: 'HIGH' },
       confidence: 0.893, impact: 15100,
       evidence: ['Contract: $42K expected', 'Usage: 1,890 overage units underbilled', 'Billing: discount misapplied to overages'],
       reasoning: ['Aggregated all 3 agent outputs', 'Net leakage: $15,100', 'Recovery probability 82%'],
@@ -265,7 +265,7 @@ export const ACCOUNT_FALLBACK_DATA = {
     orch: {
       role: 'Orchestrator',
       input: 'All 3 agent outputs · shared context',
-      output: { expected: '$125,000', actual_billed: '$100,038', net_leakage: '$8,000', recovery_probability: '0.78', urgency: 'MEDIUM' },
+      output: { expected: '$125,000', actual_billed: '$100,038', net_leakage: '$8,000.00', recovery_probability: '0.78', urgency: 'MEDIUM' },
       confidence: 0.882, impact: 8000,
       evidence: ['Contract: $125K expected', 'Usage: 1,200 overage units undercharged', 'Billing: discount misapplied to overages'],
       reasoning: ['Aggregated all 3 agent outputs', 'Net leakage: $8,000', 'Recovery probability 78%'],
