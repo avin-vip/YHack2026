@@ -1,7 +1,73 @@
 // ── RIGHT DOCK PANEL: email, billing payload, ranked actions, report, feedback ──
-import { agentData } from './state.js';
+import { agentData, state } from './state.js';
+import { exportAccountReport } from './report.js';
+
+function _fmt(v) {
+  return v == null || v === '' ? '—' : String(v);
+}
+
+function _buildPlainTextEmail(emailData) {
+  const o = agentData.orch?.output || {};
+  const bp = agentData.orch?.billing_payload || {};
+  const inv = bp.invoice_id || bp.id || 'INV-CORRECTION';
+  const amt = bp.amount != null ? `$${Number(bp.amount).toLocaleString()}` : _fmt(o.net_leakage);
+  const due = bp.due_days || 30;
+  const today = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+  const sep = '------------------------------------------';
+  const ev = (agentData.orch?.evidence || agentData.contract?.evidence || []).slice(0, 3);
+
+  return [
+    `Date: ${today}`,
+    `Reference: ${inv}`,
+    '',
+    'Dear Finance Team,',
+    '',
+    'ARIA identified a billing discrepancy between executed contract terms, measured usage, and issued invoice values.',
+    '',
+    'FINANCIAL SUMMARY',
+    sep,
+    `Expected Revenue: ${_fmt(o.expected)}`,
+    `Amount Invoiced:  ${_fmt(o.actual_billed)}`,
+    `Net Discrepancy:  ${_fmt(o.net_leakage)}`,
+    '',
+    ev.length ? 'CONTRACTUAL BASIS' : '',
+    ev.length ? sep : '',
+    ...ev.map(line => `- ${line}`),
+    ev.length ? '' : '',
+    'CORRECTIVE INVOICE',
+    sep,
+    `Invoice No.: ${inv}`,
+    `Amount Due:  ${amt}`,
+    `Due Date:    Within ${due} days`,
+    '',
+    'Please review the corrective invoice and remit within the stated period.',
+    '',
+    'Best regards,',
+    'Finance Operations',
+    'ARIA Revenue Recovery System',
+  ].filter(Boolean).join('\n');
+}
+
+export function sendRecoveryEmail() {
+  const email = agentData.orch?.email || {};
+  const rawTo = (email.to || 'finance-ops@acme.com').split(/[;,]/)[0].trim();
+  const subject = email.subject || `Billing Correction Notice — ${_fmt(agentData.orch?.output?.net_leakage)}`;
+  const body = state.lastEmailPlain?.trim() || _buildPlainTextEmail(email);
+
+  const href =
+    `mailto:${encodeURIComponent(rawTo)}` +
+    `?subject=${encodeURIComponent(subject)}` +
+    `&body=${encodeURIComponent(body)}`;
+  window.location.href = href;
+}
 
 export function updateEmail(emailData) {
+  state.lastEmailPlain = _buildPlainTextEmail(emailData);
+  const o = agentData.orch?.output || {};
+  const bp = agentData.orch?.billing_payload || {};
+  const inv = bp.invoice_id || bp.id || 'INV-CORRECTION';
+  const amt = bp.amount != null ? `$${Number(bp.amount).toLocaleString()}` : _fmt(o.net_leakage);
+
   document.getElementById('tag-email').textContent = 'READY';
   document.getElementById('tag-email').className = 'dock-tag live';
   const el = document.getElementById('db-email');
@@ -9,21 +75,27 @@ export function updateEmail(emailData) {
   el.innerHTML = `
     <div class="field"><span class="field-key">TO</span><span class="field-val">${emailData.to || 'finance-ops@acme.com'}</span></div>
     <div class="field"><span class="field-key">SUBJ</span><span class="field-val acid">${emailData.subject || 'Billing Correction — Oct Overage'}</span></div>
-    <div style="margin-top:5px;font-size:8px;color:var(--mid);line-height:1.65">${emailData.body || 'Corrective invoice <span style="color:var(--hot);font-weight:600">INV-2024-889</span> for <span style="color:var(--hot);font-weight:600">$21,250</span> has been issued. 840 overage units uncaptured. Payment due within 30 days per §4.2.'}</div>`;
+    <div class="field"><span class="field-key">REF</span><span class="field-val hot">${inv} · ${amt}</span></div>
+    <div style="margin-top:5px;font-size:8px;color:var(--mid);line-height:1.65">${emailData.body || 'Corrective invoice details prepared and ready to send.'}</div>
+    <div style="margin-top:8px">
+      <button type="button" class="report-btn" style="font-size:9px;padding:5px 10px;width:100%" onclick="sendRecoveryEmail()">↗ SEND RECOVERY EMAIL</button>
+    </div>`;
 }
 
 export function updateBillingPayload(payload) {
+  const p = payload || {};
+  state.lastBillingPayload = p;
   document.getElementById('tag-json').textContent = 'READY';
   document.getElementById('tag-json').className = 'dock-tag ready';
   const el = document.getElementById('db-json');
   el.className = 'dock-body ready';
 
-  const id = payload.invoice_id || 'INV-2024-889';
-  const amount = payload.amount || 21250;
-  const units = payload.overage_units || 840;
-  const rate = payload.rate_per_unit || 0.05;
-  const conf = payload.confidence || 0.917;
-  const due = payload.due_days || 30;
+  const id = p.invoice_id || p.id || 'INV-2024-889';
+  const amount = p.amount || 21250;
+  const units = p.overage_units || 840;
+  const rate = p.rate_per_unit || 0.05;
+  const conf = p.confidence || 0.917;
+  const due = p.due_days || 30;
 
   el.innerHTML = `<div class="json-pre"><button class="copy-btn" onclick="copyJSON()">COPY</button><span class="jk">"invoice"</span>: {<br>&nbsp;&nbsp;<span class="jk">"id"</span>: <span class="js">"${id}"</span>,<br>&nbsp;&nbsp;<span class="jk">"amount"</span>: <span class="jn">${amount}</span>,<br>&nbsp;&nbsp;<span class="jk">"overage_units"</span>: <span class="jn">${units}</span>,<br>&nbsp;&nbsp;<span class="jk">"rate_per_unit"</span>: <span class="jn">${rate}</span>,<br>&nbsp;&nbsp;<span class="jk">"confidence"</span>: <span class="jn">${conf}</span>,<br>&nbsp;&nbsp;<span class="jk">"due_days"</span>: <span class="jn">${due}</span><br>}</div>`;
 }
@@ -67,30 +139,23 @@ export function giveFeedback(correct) {
   setTimeout(() => { el.classList.remove('show'); }, 3000);
 }
 
-export function exportReport() {
-  const report = {
-    case_id: 'ACME-ENT-90210',
-    generated: new Date().toISOString(),
-    agents: {
-      contract: { confidence: agentData.contract.confidence, output: agentData.contract.output },
-      usage: { confidence: agentData.usage.confidence, output: agentData.usage.output },
-      billing: { confidence: agentData.billing.confidence, output: agentData.billing.output },
-      orchestrator: { confidence: agentData.orch.confidence, output: agentData.orch.output },
-    },
-    issues: ['Overage not captured (840 units)', 'Discount misapplied to overages', 'Missing overage line item on invoice'],
-    estimated_recovery: 21250,
-    top_action: { id: 'INV-2024-889', amount: 21250, score: 92.3 },
-    avg_confidence: 0.917,
-  };
-  const blob = new Blob([JSON.stringify(report, null, 2)], { type: 'application/json' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a'); a.href = url;
-  a.download = 'aria-report-ACME-ENT-90210.json'; a.click();
-  URL.revokeObjectURL(url);
+export async function exportReport() {
+  const accountName = state.currentAccountName || 'Account';
+  const accountId = state.currentAccountId || '';
+  await exportAccountReport(accountName, accountId, agentData);
 }
 
 export function copyJSON() {
-  const j = `{"invoice":{"id":"INV-2024-889","amount":21250,"overage_units":840,"rate_per_unit":0.05,"confidence":0.917,"due_days":30}}`;
+  const p = state.lastBillingPayload || agentData.orch?.billing_payload || {};
+  const invoice = {
+    id: p.invoice_id || p.id || 'INV-2024-889',
+    amount: p.amount ?? 21250,
+    overage_units: p.overage_units ?? 840,
+    rate_per_unit: p.rate_per_unit ?? 0.05,
+    confidence: p.confidence ?? 0.917,
+    due_days: p.due_days ?? 30,
+  };
+  const j = JSON.stringify({ invoice }, null, 2);
   navigator.clipboard.writeText(j).catch(() => {});
   const btn = document.querySelector('.copy-btn');
   if (btn) { btn.textContent = 'COPIED'; setTimeout(() => btn.textContent = 'COPY', 1500); }
@@ -116,6 +181,8 @@ export function resetDock() {
     <div class="field"><span class="field-key">SLACK</span><span class="field-val" style="color:var(--rule2)">—</span></div>
     <div class="field"><span class="field-key">STATUS</span><span class="field-val" style="color:var(--rule2)">QUEUED</span></div>`;
 
+  state.lastBillingPayload = null;
+  state.lastEmailPlain = null;
   document.getElementById('reportBlock').classList.remove('show');
   document.getElementById('feedbackBar').classList.remove('show');
   document.getElementById('fb-result').classList.remove('show');

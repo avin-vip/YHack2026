@@ -6,7 +6,7 @@ import { state, STEPS, agentData, setAgentData, setAccounts, ACCOUNTS, ACCOUNT_F
 import { healthCheck, analyzeAccount, listAccounts, transformAnalysisResult } from './api.js';
 import { log, logWithTimestamp, setTermState, setTermOut, setConfidence, setStatus, setSB } from './terminals.js';
 import { drawEdges, activateEdge, setNode, resetEdges } from './graph.js';
-import { updateEmail, updateBillingPayload, updateRankedActions, showReport, giveFeedback, exportReport, copyJSON, resetDock } from './dock.js';
+import { updateEmail, updateBillingPayload, updateRankedActions, showReport, giveFeedback, exportReport, copyJSON, resetDock, sendRecoveryEmail } from './dock.js';
 import { openReasoning, closeReasoning, closeModelSelector, showActionDetail } from './reasoning.js';
 import { startResize } from './resize.js';
 import { renderOpsView, setDrillDownHandler } from './ops.js';
@@ -22,6 +22,7 @@ window.showActionDetail = showActionDetail;
 window.giveFeedback = giveFeedback;
 window.exportReport = exportReport;
 window.copyJSON = copyJSON;
+window.sendRecoveryEmail = sendRecoveryEmail;
 window.startResize = startResize;
 window.switchMode = switchMode;
 
@@ -146,6 +147,8 @@ function switchMode(mode, accountId, accountData) {
     if (accountId) {
       currentAccountId = accountId;
       state.currentAccountId = accountId;
+      const selected = ACCOUNTS.find(a => a.id === accountId);
+      state.currentAccountName = selected?.name || accountId;
       loadModelSelectionsForAccount(accountId);
     }
 
@@ -264,6 +267,7 @@ function updateDetailHeader(accountId) {
   if (!account) return;
   currentAccountId = accountId;
   state.currentAccountId = accountId;
+  state.currentAccountName = account.name || accountId;
   const arrDisplay = account.arr >= 1000000
     ? '$' + (account.arr / 1000000).toFixed(1) + 'M'
     : '$' + (account.arr / 1000).toFixed(0) + 'K';

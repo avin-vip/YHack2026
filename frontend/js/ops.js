@@ -1,15 +1,33 @@
 // ── MULTI-ACCOUNT OPERATIONS VIEW ──
 // Grid of parallel analysis pipelines with aggregate metrics.
 
-import { ACCOUNTS, ACCOUNT_FALLBACK_DATA, getModelSelectionsForAccount } from './state.js';
-import { healthCheck, transformAnalysisResult, streamBatchAnalyze } from './api.js';
+import {
+  ACCOUNTS,
+  ACCOUNT_FALLBACK_DATA,
+  getModelSelectionsForAccount,
+  setAccounts,
+} from './state.js';
+import {
+  healthCheck,
+  listAccounts,
+  streamBatchAnalyze,
+  transformAnalysisResult,
+  uploadContract,
+} from './api.js';
+import { buildDashboardSummaryFromCards, exportDashboardReport } from './report.js';
 
 // Per-card state
 let cardStates = {};
 let totalLeakage = 0;
+let opsContainerRef = null;
+let lastBatchAccounts = [];
 
 // Callback when user clicks a card to drill into single-account view
 let onDrillDown = null;
+
+function getBatchAccountIds() {
+  return lastBatchAccounts.length > 0 ? lastBatchAccounts : ACCOUNTS.map(a => a.id);
+}
 
 function parseCurrency(value) {
   if (typeof value === 'number') return value;
@@ -33,8 +51,10 @@ export function setDrillDownHandler(fn) {
 }
 
 export function renderOpsView(container) {
+  opsContainerRef = container;
   totalLeakage = 0;
   cardStates = {};
+  lastBatchAccounts = [];
 
   container.innerHTML = `
     <div class="ops-view">
@@ -60,7 +80,12 @@ export function renderOpsView(container) {
             <div class="ops-metric-value" id="ops-confidence">—</div>
           </div>
         </div>
-        <button class="btn primary ops-analyze-btn" id="ops-analyze-btn">▶ ANALYZE ALL</button>
+        <div style="display:flex; gap:8px; align-items:center;">
+          <button class="btn" id="ops-upload-btn">↑ UPLOAD PDF</button>
+          <input type="file" id="ops-upload-input" accept=".pdf" style="display:none;">
+          <button class="btn" id="ops-export-btn" style="display:none;">↓ EXPORT REPORT</button>
+          <button class="btn primary ops-analyze-btn" id="ops-analyze-btn">▶ ANALYZE ALL</button>
+        </div>
       </div>
       <div class="ops-grid" id="ops-grid">
         ${ACCOUNTS.map(a => renderCard(a)).join('')}
@@ -72,6 +97,11 @@ export function renderOpsView(container) {
   `;
 
   document.getElementById('ops-analyze-btn').addEventListener('click', runBatchAnalysis);
+  document.getElementById('ops-upload-btn').addEventListener('click', () => {
+    document.getElementById('ops-upload-input').click();
+  });
+  document.getElementById('ops-upload-input').addEventListener('change', handleUpload);
+  document.getElementById('ops-export-btn').addEventListener('click', handleExportReport);
 
   // Click-to-drill-down on cards
   ACCOUNTS.forEach(a => {
@@ -129,6 +159,42 @@ function renderCard(account) {
   `;
 }
 
+async function handleUpload(evt) {
+  const input = evt.target;
+  const file = input.files?.[0];
+  input.value = '';
+  if (!file) return;
+
+  const uploadBtn = document.getElementById('ops-upload-btn');
+  const footer = document.getElementById('ops-footer-text');
+
+  uploadBtn.disabled = true;
+  uploadBtn.textContent = 'UPLOADING...';
+  footer.textContent = `UPLOADING — ${file.name}`;
+
+  try {
+    const result = await uploadContract(file);
+    let accounts = await listAccounts();
+    if (!accounts || accounts.length === 0) {
+      accounts = ACCOUNTS.slice();
+      if (!accounts.find(a => a.id === result.account.id)) {
+        accounts.push(result.account);
+      }
+    }
+    setAccounts(accounts);
+    if (opsContainerRef) renderOpsView(opsContainerRef);
+    const newFooter = document.getElementById('ops-footer-text');
+    if (newFooter) {
+      newFooter.textContent = `UPLOADED — ${result.account.name} is ready for Analyze All`;
+    }
+  } catch (err) {
+    footer.textContent = `UPLOAD FAILED — ${err?.message || 'Could not upload contract PDF'}`;
+  } finally {
+    uploadBtn.disabled = false;
+    uploadBtn.textContent = '↑ UPLOAD PDF';
+  }
+}
+
 // ── BATCH ANALYSIS ORCHESTRATION ──
 
 async function runBatchAnalysis() {
@@ -149,6 +215,8 @@ async function runBatchAnalysis() {
 async function runWithBackend() {
   // Initialize all cards into a running state with Contract stage active.
   ACCOUNTS.forEach(a => startCardLive(a.id));
+  document.getElementById('ops-export-btn').style.display = 'none';
+  lastBatchAccounts = ACCOUNTS.map(a => a.id);
 
   const providersByAccount = {};
   ACCOUNTS.forEach(account => {
@@ -174,7 +242,10 @@ async function runWithBackend() {
 }
 
 function runWithFallback() {
-  ACCOUNTS.forEach((a, i) => {
+  document.getElementById('ops-export-btn').style.display = 'none';
+  const eligible = ACCOUNTS.filter(a => ACCOUNT_FALLBACK_DATA[a.id]);
+  lastBatchAccounts = eligible.map(a => a.id);
+  eligible.forEach((a, i) => {
     setTimeout(() => startCardAnimation(a.id), i * 400);
     setTimeout(() => completeCard(a.id, ACCOUNT_FALLBACK_DATA[a.id]), i * 1800 + 2500);
   });
@@ -294,7 +365,7 @@ function failCard(accountId, errorMessage) {
     </div>
   `;
 
-  const allFinished = ACCOUNTS.every(a => ['done', 'failed'].includes(cardStates[a.id]?.phase));
+  const allFinished = getBatchAccountIds().every(id => ['done', 'failed'].includes(cardStates[id]?.phase));
   if (allFinished) finalizeBatch();
 }
 
@@ -407,7 +478,7 @@ function completeCard(accountId, data) {
   animateTotalLeakage();
 
   // Check if all done
-  const allFinished = ACCOUNTS.every(a => ['done', 'failed'].includes(cardStates[a.id]?.phase));
+  const allFinished = getBatchAccountIds().every(id => ['done', 'failed'].includes(cardStates[id]?.phase));
   if (allFinished) finalizeBatch();
 }
 
@@ -438,24 +509,7 @@ function finalizeBatch() {
   btn.disabled = false;
   btn.className = 'btn ops-analyze-btn done';
   btn.onclick = () => {
-    // Reset and re-render
-    btn.className = 'btn primary ops-analyze-btn';
-    btn.textContent = '▶ ANALYZE ALL';
-    const grid = document.getElementById('ops-grid');
-    totalLeakage = 0;
-    document.getElementById('ops-total-leakage').textContent = formatCurrency2(0);
-    grid.innerHTML = ACCOUNTS.map(a => renderCard(a)).join('');
-    ACCOUNTS.forEach(a => {
-      const card = document.getElementById(`card-${a.id}`);
-      if (card && onDrillDown) {
-        card.addEventListener('click', () => {
-          onDrillDown(a.id, cardStates[a.id]?.data || null);
-        });
-      }
-    });
-    document.getElementById('ops-footer-text').textContent = `READY — ${ACCOUNTS.length} accounts loaded`;
-    document.getElementById('ops-detection').textContent = '—';
-    document.getElementById('ops-confidence').textContent = '—';
+    if (opsContainerRef) renderOpsView(opsContainerRef);
   };
 
   // Update aggregate metrics
@@ -471,6 +525,33 @@ function finalizeBatch() {
   }, 0) / ACCOUNTS.length;
   document.getElementById('ops-confidence').textContent = Math.round(avgConf * 100) + '%';
 
+  if (lastBatchAccounts.length > 0) {
+    document.getElementById('ops-export-btn').style.display = '';
+  }
+
   document.getElementById('ops-footer-text').textContent =
     `COMPLETE — ${formatCurrency2(totalLeakage)} total leakage detected across ${ACCOUNTS.length} accounts`;
+}
+
+function handleExportReport() {
+  const analyzedAccounts = ACCOUNTS.filter(a => cardStates[a.id]?.data);
+  if (analyzedAccounts.length === 0) return;
+
+  const summary = buildDashboardSummaryFromCards(analyzedAccounts, cardStates);
+  const accountsPayload = analyzedAccounts.map(a => ({
+    account_id: a.id,
+    name: a.name,
+    arr: a.arr,
+    tier: a.tier,
+    ...cardStates[a.id].data,
+  }));
+
+  const btn = document.getElementById('ops-export-btn');
+  btn.disabled = true;
+  btn.textContent = 'GENERATING...';
+  exportDashboardReport(summary, accountsPayload)
+    .finally(() => {
+      btn.disabled = false;
+      btn.textContent = '↓ EXPORT REPORT';
+    });
 }

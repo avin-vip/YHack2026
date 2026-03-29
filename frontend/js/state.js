@@ -28,6 +28,9 @@ export const state = {
   viewMode: 'summary',
   modelsLocked: false,
   currentAccountId: 'acme-ent-90210',
+  currentAccountName: 'Acme Enterprises',
+  lastBillingPayload: null,
+  lastEmailPlain: null,
 };
 
 const MODEL_PREFS_STORAGE_KEY = 'aria_model_prefs_v1';
