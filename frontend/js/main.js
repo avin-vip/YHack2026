@@ -2,7 +2,7 @@
 // Orchestrates all modules, step functions, keyboard, init.
 
 
-import { state, STEPS, agentData, setAgentData, setAccounts, ACCOUNTS, ACCOUNT_FALLBACK_DATA, AVAILABLE_MODELS, modelSelections } from './state.js';
+import { state, STEPS, agentData, setAgentData, setAccounts, ACCOUNTS, ACCOUNT_FALLBACK_DATA, AVAILABLE_MODELS, modelSelections, loadModelSelectionsForAccount } from './state.js';
 import { healthCheck, analyzeAccount, listAccounts, transformAnalysisResult } from './api.js';
 import { log, setTermState, setTermOut, setConfidence, setStatus, setSB } from './terminals.js';
 import { drawEdges, activateEdge, setNode, resetEdges } from './graph.js';
@@ -32,6 +32,16 @@ let currentAccountId = 'acme-ent-90210';
 // ── CURRENT MODE ──
 // 'ops' = multi-account grid view, 'detail' = single-account step-through
 let currentMode = 'ops';
+
+function renderNodeModelLabels() {
+  ['contract', 'usage', 'billing', 'orch'].forEach(id => {
+    const nmEl = document.getElementById('nm-' + id);
+    if (nmEl) {
+      const modelName = AVAILABLE_MODELS.find(m => m.id === modelSelections[id])?.name || '';
+      nmEl.textContent = modelName;
+    }
+  });
+}
 
 // ── VIEW TOGGLE (summary/raw) ──
 function setView(mode) {
@@ -85,6 +95,8 @@ function switchMode(mode, accountId, accountData) {
 
     if (accountId) {
       currentAccountId = accountId;
+      state.currentAccountId = accountId;
+      loadModelSelectionsForAccount(accountId);
     }
 
     if (accountId && accountData) {
@@ -178,6 +190,7 @@ function updateDetailHeader(accountId) {
   const account = ACCOUNTS.find(a => a.id === accountId);
   if (!account) return;
   currentAccountId = accountId;
+  state.currentAccountId = accountId;
   const arrDisplay = account.arr >= 1000000
     ? '$' + (account.arr / 1000000).toFixed(1) + 'M'
     : '$' + (account.arr / 1000).toFixed(0) + 'K';
@@ -540,6 +553,8 @@ setDrillDownHandler((accountId, data) => {
 
 // ── INIT ──
 window.addEventListener('load', async () => {
+  loadModelSelectionsForAccount(state.currentAccountId);
+
   drawEdges();
   window.addEventListener('resize', drawEdges);
   updateStepUI();
@@ -572,11 +587,5 @@ window.addEventListener('load', async () => {
   }
 
   // Initialize model labels on nodes
-  ['contract', 'usage', 'billing', 'orch'].forEach(id => {
-    const nmEl = document.getElementById('nm-' + id);
-    if (nmEl) {
-      const modelName = AVAILABLE_MODELS.find(m => m.id === modelSelections[id])?.name || '';
-      nmEl.textContent = modelName;
-    }
-  });
+  renderNodeModelLabels();
 });

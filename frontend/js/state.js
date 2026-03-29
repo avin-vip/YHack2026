@@ -10,11 +10,15 @@ export const AVAILABLE_MODELS = [
   { id: 'kimi', name: 'Kimi' },
 ];
 
-export const modelSelections = {
+export const DEFAULT_MODEL_SELECTIONS = {
   contract: 'gemini',
   usage: 'gemini',
   billing: 'gemini',
   orch: 'gemini',
+};
+
+export const modelSelections = {
+  ...DEFAULT_MODEL_SELECTIONS,
 };
 
 export const state = {
@@ -23,7 +27,74 @@ export const state = {
   autoTimer: null,
   viewMode: 'summary',
   modelsLocked: false,
+  currentAccountId: 'acme-ent-90210',
 };
+
+const MODEL_PREFS_STORAGE_KEY = 'aria_model_prefs_v1';
+let accountModelPreferences = {};
+
+function _isValidModel(modelId) {
+  return AVAILABLE_MODELS.some(m => m.id === modelId);
+}
+
+function _sanitizeSelections(selections) {
+  const clean = { ...DEFAULT_MODEL_SELECTIONS };
+  if (!selections || typeof selections !== 'object') return clean;
+
+  for (const agentId of Object.keys(DEFAULT_MODEL_SELECTIONS)) {
+    const modelId = selections[agentId];
+    if (_isValidModel(modelId)) clean[agentId] = modelId;
+  }
+  return clean;
+}
+
+function _persistModelPreferences() {
+  try {
+    localStorage.setItem(MODEL_PREFS_STORAGE_KEY, JSON.stringify(accountModelPreferences));
+  } catch {
+    // Ignore storage write failures (private mode/quota).
+  }
+}
+
+function _loadModelPreferences() {
+  try {
+    const raw = localStorage.getItem(MODEL_PREFS_STORAGE_KEY);
+    if (!raw) return {};
+
+    const parsed = JSON.parse(raw);
+    if (!parsed || typeof parsed !== 'object') return {};
+
+    const clean = {};
+    for (const [accountId, selections] of Object.entries(parsed)) {
+      clean[accountId] = _sanitizeSelections(selections);
+    }
+    return clean;
+  } catch {
+    return {};
+  }
+}
+
+accountModelPreferences = _loadModelPreferences();
+
+export function getModelSelectionsForAccount(accountId) {
+  return _sanitizeSelections(accountModelPreferences[accountId]);
+}
+
+export function loadModelSelectionsForAccount(accountId) {
+  const selections = getModelSelectionsForAccount(accountId);
+  for (const agentId of Object.keys(DEFAULT_MODEL_SELECTIONS)) {
+    modelSelections[agentId] = selections[agentId];
+  }
+}
+
+export function saveModelSelectionForAccount(accountId, agentId, modelId) {
+  if (!accountId || !DEFAULT_MODEL_SELECTIONS[agentId] || !_isValidModel(modelId)) return;
+
+  const existing = getModelSelectionsForAccount(accountId);
+  existing[agentId] = modelId;
+  accountModelPreferences[accountId] = existing;
+  _persistModelPreferences();
+}
 
 export const STEPS = [
   { hint: 'Deploy Contract Analyst' },

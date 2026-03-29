@@ -76,14 +76,14 @@ PRICING_TIERS = [
 
 COMPANIES = [
     ("Nexus Analytics",      "SaaS / Analytics",              "US-WEST",    "finance@nexusanalytics.io"),
-    ("Vertex Systems",       "Cloud Infrastructure",           "US-EAST",    "billing@vertexsystems.io"),
+    ("Orbit Systems",        "Cloud Infrastructure",           "US-EAST",    "billing@orbitsystems.io"),
     ("Phalanx Technologies", "Cybersecurity",                  "EU-WEST",    "accounts@phalanxtech.io"),
     ("Meridian Data",        "Data Engineering",               "US-CENTRAL", "finance@meridiandata.io"),
     ("Apex Cloud",           "Cloud Services",                 "APAC",       "ops-finance@apexcloud.io"),
-    ("Summit AI",            "Artificial Intelligence",        "US-WEST",    "billing@summitatech.io"),
+    ("Pioneer AI",           "Artificial Intelligence",        "US-WEST",    "billing@pioneerai.io"),
     ("Harbor Logistics",     "Supply Chain / Logistics",       "US-EAST",    "finance@harborlogistics.io"),
     ("Catalyst Health",      "Healthcare Technology",          "US-CENTRAL", "accounts@catalysthealth.io"),
-    ("Prism Financial",      "FinTech",                        "EU-WEST",    "finance@prismfinancial.io"),
+    ("Beacon Financial",     "FinTech",                        "EU-WEST",    "finance@beaconfinancial.io"),
     ("Aurora Robotics",      "Manufacturing / Robotics",       "APAC",       "billing@aurorarobotics.io"),
 ]
 

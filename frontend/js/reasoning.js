@@ -1,5 +1,5 @@
 // ── REASONING OVERLAY PANEL ──
-import { agentData, AVAILABLE_MODELS, modelSelections, state } from './state.js';
+import { agentData, AVAILABLE_MODELS, modelSelections, state, saveModelSelectionForAccount } from './state.js';
 
 const AGENT_NAMES = {
   contract: 'Contract Analyst',
@@ -57,6 +57,7 @@ export function openModelSelector(id) {
       const modelId = el.dataset.modelId;
       const agentId = el.dataset.agentId;
       modelSelections[agentId] = modelId;
+      saveModelSelectionForAccount(state.currentAccountId, agentId, modelId);
       const modelName = AVAILABLE_MODELS.find(m => m.id === modelId)?.name || modelId;
       const nmEl = document.getElementById('nm-' + agentId);
       if (nmEl) nmEl.textContent = modelName;

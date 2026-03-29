@@ -1,7 +1,7 @@
 // ── MULTI-ACCOUNT OPERATIONS VIEW ──
 // Grid of parallel analysis pipelines with aggregate metrics.
 
-import { ACCOUNTS, ACCOUNT_FALLBACK_DATA } from './state.js';
+import { ACCOUNTS, ACCOUNT_FALLBACK_DATA, getModelSelectionsForAccount } from './state.js';
 import { healthCheck, analyzeAccount, listAccounts, transformAnalysisResult } from './api.js';
 
 const AGENT_KEYS = ['contract', 'usage', 'billing', 'orch'];
@@ -129,7 +129,8 @@ async function runWithBackend() {
   ACCOUNTS.forEach(a => startCardAnimation(a.id));
 
   const analysisPromises = ACCOUNTS.map(async (account) => {
-    const backendResult = await analyzeAccount(account.id);
+    const providers = getModelSelectionsForAccount(account.id);
+    const backendResult = await analyzeAccount(account.id, providers);
     const transformed = transformAnalysisResult(backendResult);
     completeCard(account.id, transformed || ACCOUNT_FALLBACK_DATA[account.id]);
   });
