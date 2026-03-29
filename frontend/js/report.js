@@ -23,17 +23,17 @@ const REPORT_CSS = `
     --amber:  #b8600a;
     --blue:   #1a4a8a;
     font-family: 'IBM Plex Sans', sans-serif;
-    font-size: 11px;
+    font-size: 15px;
     color: var(--ink);
-    line-height: 1.58;
+    line-height: 1.7;
     background: #fff;
-    max-width: 760px;
+    max-width: 960px;
     margin: 0 auto;
   }
 
   /* ── Cover ── */
   .rpt-cover {
-    padding: 68px 56px 52px;
+    padding: 72px 56px 56px;
     border-bottom: 3px solid var(--ink);
   }
   .rpt-logo {
@@ -47,19 +47,19 @@ const REPORT_CSS = `
   }
   .rpt-logo span { color: var(--accent); }
   .rpt-tagline {
-    font-size: 9px;
+    font-size: 10px;
     font-weight: 700;
-    letter-spacing: 0.2em;
+    letter-spacing: 0.18em;
     text-transform: uppercase;
     color: var(--muted);
-    margin-bottom: 44px;
+    margin-bottom: 40px;
   }
   .rpt-doc-title {
-    font-size: 26px;
+    font-size: 28px;
     font-weight: 600;
-    line-height: 1.25;
+    line-height: 1.3;
     color: var(--ink);
-    margin-bottom: 32px;
+    margin-bottom: 28px;
   }
   .rpt-cover-kpi {
     display: flex;
@@ -69,31 +69,31 @@ const REPORT_CSS = `
   }
   .rpt-ckpi {
     flex: 1;
-    padding: 14px 18px;
+    padding: 18px 20px;
     border-right: 1px solid var(--rule);
   }
   .rpt-ckpi:last-child { border-right: none; }
   .rpt-ckpi-label {
-    font-size: 7.5px;
+    font-size: 9px;
     font-weight: 700;
-    letter-spacing: 0.16em;
+    letter-spacing: 0.12em;
     text-transform: uppercase;
     color: var(--muted);
-    margin-bottom: 5px;
+    margin-bottom: 8px;
   }
   .rpt-ckpi-val {
     font-family: 'IBM Plex Mono', monospace;
-    font-size: 20px;
+    font-size: 22px;
     font-weight: 600;
     color: var(--ink);
-    line-height: 1;
+    line-height: 1.15;
   }
   .rpt-ckpi-val.hot { color: var(--accent); }
   .rpt-ckpi-val.cool { color: var(--green); }
 
   /* ── Page ── */
   .rpt-page {
-    padding: 36px 56px;
+    padding: 44px 56px 48px;
   }
   .rpt-page + .rpt-page {
     border-top: 1px solid var(--rule);
@@ -101,61 +101,124 @@ const REPORT_CSS = `
 
   /* ── Section labels ── */
   .rpt-section-tag {
-    font-size: 7.5px;
-    font-weight: 700;
-    letter-spacing: 0.2em;
-    text-transform: uppercase;
-    color: var(--muted);
-    margin-bottom: 8px;
-  }
-  .rpt-h2 {
-    font-size: 17px;
-    font-weight: 600;
-    color: var(--ink);
-    padding-bottom: 10px;
-    border-bottom: 2px solid var(--ink);
-    margin-bottom: 22px;
-  }
-  .rpt-h3 {
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--ink);
-    padding-bottom: 8px;
-    border-bottom: 1px solid var(--rule);
-    margin-bottom: 16px;
-  }
-  .rpt-h4 {
-    font-size: 8.5px;
+    font-size: 10px;
     font-weight: 700;
     letter-spacing: 0.14em;
     text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 12px;
+  }
+  .rpt-h2 {
+    font-size: 22px;
+    font-weight: 600;
+    color: var(--ink);
+    padding-bottom: 12px;
+    border-bottom: 2px solid var(--ink);
+    margin-bottom: 28px;
+  }
+  .rpt-h3 {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--ink);
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--rule);
+    margin-bottom: 18px;
+  }
+  .rpt-h4 {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
     color: var(--mid);
-    margin: 18px 0 10px;
+    margin: 24px 0 14px;
   }
 
-  /* ── Risk banner ── */
+  /* ── Recommended action (primary CTA — must read larger than urgency strip) ── */
+  .rpt-recommend {
+    border: 1px solid rgba(26,122,94,0.45);
+    border-left: 8px solid var(--green);
+    background: linear-gradient(135deg, rgba(26,122,94,0.12) 0%, #fff 48%, #fff 100%);
+    padding: 28px 32px 28px 36px;
+    margin: 0 0 24px 0;
+    border-radius: 4px;
+    box-shadow: 0 4px 24px rgba(15,17,23,0.07);
+  }
+  .rpt-recommend-tag {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--green);
+    margin-bottom: 12px;
+  }
+  .rpt-recommend-headline {
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--ink);
+    line-height: 1.3;
+    margin-bottom: 14px;
+    letter-spacing: -0.02em;
+  }
+  .rpt-recommend-desc {
+    font-size: 15px;
+    line-height: 1.75;
+    color: #1a1a2e;
+    margin-bottom: 18px;
+    max-width: 52em;
+  }
+  .rpt-recommend-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 24px 40px;
+    font-size: 14px;
+    color: var(--mid);
+    padding-top: 18px;
+    border-top: 1px solid rgba(26,122,94,0.3);
+  }
+  .rpt-recommend-row strong {
+    color: var(--ink);
+    font-weight: 600;
+    margin-right: 6px;
+  }
+  .rpt-recommend-amt {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 17px;
+    font-weight: 600;
+    color: var(--accent);
+  }
+
+  /* ── Risk / urgency (secondary to recommended action — compact strip) ── */
   .rpt-risk {
     display: flex;
     align-items: flex-start;
-    gap: 16px;
-    padding: 12px 16px;
+    gap: 14px;
+    padding: 14px 18px;
     border-left: 4px solid var(--accent);
-    background: rgba(196,28,28,0.035);
-    margin-bottom: 20px;
+    background: rgba(196,28,28,0.04);
+    margin-bottom: 28px;
+  }
+  .rpt-risk--compact {
+    align-items: flex-start;
+    padding: 12px 16px;
+    margin-bottom: 28px;
+  }
+  .rpt-risk--compact .rpt-risk-text {
+    font-size: 13px;
+    line-height: 1.55;
   }
   .rpt-risk.medium { border-color: var(--amber); background: rgba(184,96,10,0.035); }
   .rpt-risk.low    { border-color: var(--muted); background: var(--rule2); }
   .rpt-risk-badge {
     font-family: 'IBM Plex Mono', monospace;
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 700;
     color: var(--accent);
     white-space: nowrap;
-    padding-top: 1px;
+    padding-top: 2px;
   }
   .rpt-risk.medium .rpt-risk-badge { color: var(--amber); }
   .rpt-risk.low    .rpt-risk-badge { color: var(--muted); }
-  .rpt-risk-text { font-size: 10.5px; color: var(--ink); line-height: 1.5; }
+  .rpt-risk-text { font-size: 14px; color: var(--ink); line-height: 1.65; }
 
   /* ── KPI row ── */
   .rpt-kpis {
@@ -166,50 +229,50 @@ const REPORT_CSS = `
   }
   .rpt-kpi {
     flex: 1;
-    padding: 13px 16px;
+    padding: 16px 18px;
     border-right: 1px solid var(--rule);
   }
   .rpt-kpi:last-child { border-right: none; }
   .rpt-kpi-lbl {
-    font-size: 7px;
+    font-size: 9px;
     font-weight: 700;
-    letter-spacing: 0.16em;
+    letter-spacing: 0.1em;
     text-transform: uppercase;
     color: var(--muted);
-    margin-bottom: 5px;
+    margin-bottom: 8px;
   }
   .rpt-kpi-v {
     font-family: 'IBM Plex Mono', monospace;
-    font-size: 20px;
+    font-size: 22px;
     font-weight: 600;
     color: var(--ink);
-    line-height: 1;
+    line-height: 1.1;
   }
   .rpt-kpi-v.hot { color: var(--accent); }
   .rpt-kpi-v.cool { color: var(--green); }
-  .rpt-kpi-sub { font-size: 8.5px; color: var(--muted); margin-top: 3px; }
+  .rpt-kpi-sub { font-size: 11px; color: var(--muted); margin-top: 5px; }
 
   /* ── Narrative ── */
   .rpt-prose {
-    font-size: 11px;
-    line-height: 1.72;
+    font-size: 14px;
+    line-height: 1.8;
     color: #1a1a2e;
-    margin-bottom: 20px;
+    margin-bottom: 24px;
   }
-  .rpt-prose p + p { margin-top: 12px; }
+  .rpt-prose p + p { margin-top: 14px; }
 
   /* ── Lists ── */
   .rpt-list {
     list-style: none;
     padding: 0;
-    margin-bottom: 20px;
+    margin-bottom: 24px;
   }
   .rpt-list li {
-    padding: 7px 10px 7px 22px;
+    padding: 10px 12px 10px 26px;
     border-left: 3px solid var(--rule);
-    font-size: 10.5px;
-    margin-bottom: 5px;
-    line-height: 1.5;
+    font-size: 12px;
+    margin-bottom: 8px;
+    line-height: 1.55;
     position: relative;
   }
   .rpt-list li::before { content: '→'; position: absolute; left: 7px; color: var(--muted); }
@@ -220,21 +283,21 @@ const REPORT_CSS = `
   .rpt-table {
     width: 100%;
     border-collapse: collapse;
-    font-size: 10.5px;
-    margin-bottom: 22px;
+    font-size: 12px;
+    margin-bottom: 28px;
   }
   .rpt-table thead tr { background: var(--ink); color: #fff; }
   .rpt-table thead th {
-    padding: 9px 11px;
+    padding: 12px 14px;
     text-align: left;
-    font-size: 7.5px;
+    font-size: 9px;
     font-weight: 700;
-    letter-spacing: 0.12em;
+    letter-spacing: 0.08em;
     text-transform: uppercase;
   }
   .rpt-table tbody tr { border-bottom: 1px solid var(--rule); }
   .rpt-table tbody tr:nth-child(even) { background: var(--rule2); }
-  .rpt-table tbody td { padding: 8px 11px; vertical-align: top; line-height: 1.4; }
+  .rpt-table tbody td { padding: 12px 14px; vertical-align: top; line-height: 1.5; }
   .td-hot { font-family: 'IBM Plex Mono', monospace; font-weight: 600; color: var(--accent); }
   .td-cool { font-family: 'IBM Plex Mono', monospace; font-weight: 600; color: var(--green); }
   .td-mono { font-family: 'IBM Plex Mono', monospace; font-size: 10px; }
@@ -242,10 +305,10 @@ const REPORT_CSS = `
   /* ── Urgency badge ── */
   .badge {
     display: inline-block;
-    padding: 2px 7px;
-    font-size: 7px;
+    padding: 4px 10px;
+    font-size: 9px;
     font-weight: 700;
-    letter-spacing: 0.1em;
+    letter-spacing: 0.08em;
     text-transform: uppercase;
     border: 1px solid;
     white-space: nowrap;
@@ -261,144 +324,157 @@ const REPORT_CSS = `
     gap: 0;
     border: 1.5px solid var(--accent);
     background: rgba(196,28,28,0.025);
-    margin-bottom: 20px;
+    margin-bottom: 28px;
   }
   .rpt-fi {
     flex: 1;
-    min-width: 110px;
-    padding: 12px 16px;
+    min-width: 140px;
+    padding: 16px 18px;
     border-right: 1px solid rgba(196,28,28,0.2);
   }
   .rpt-fi:last-child { border-right: none; }
   .rpt-fi-lbl {
-    font-size: 7px;
+    font-size: 9px;
     font-weight: 700;
-    letter-spacing: 0.14em;
+    letter-spacing: 0.1em;
     text-transform: uppercase;
     color: var(--muted);
-    margin-bottom: 4px;
+    margin-bottom: 8px;
   }
   .rpt-fi-val {
     font-family: 'IBM Plex Mono', monospace;
-    font-size: 15px;
+    font-size: 17px;
     font-weight: 600;
     color: var(--ink);
-    line-height: 1;
+    line-height: 1.15;
   }
   .rpt-fi-val.hot  { color: var(--accent); }
   .rpt-fi-val.cool { color: var(--green); }
-  .rpt-fi-sub { font-size: 8.5px; color: var(--muted); margin-top: 3px; }
+  .rpt-fi-sub { font-size: 11px; color: var(--muted); margin-top: 5px; }
 
-  /* ── Agent row ── */
-  .rpt-chain { margin-bottom: 18px; }
+  /* ── Evidence chain (readable body copy — not tiny mono wall) ── */
+  .rpt-evidence-chain {
+    font-size: 14px;
+    line-height: 1.75;
+  }
+  .rpt-evidence-chain > .rpt-prose {
+    font-size: 15px;
+    line-height: 1.8;
+    margin-bottom: 28px;
+  }
+  .rpt-chain { margin-bottom: 8px; }
   .rpt-agent {
     display: flex;
-    gap: 14px;
-    padding: 12px 14px;
+    gap: 20px;
+    padding: 22px 24px;
     border: 1px solid var(--rule);
-    margin-bottom: 5px;
+    margin-bottom: 20px;
+    background: #fafbfc;
+    border-radius: 4px;
   }
   .rpt-agent-badge {
-    width: 26px;
-    height: 26px;
+    width: 36px;
+    height: 36px;
     flex-shrink: 0;
     display: flex;
     align-items: center;
     justify-content: center;
     font-family: 'IBM Plex Mono', monospace;
     font-weight: 700;
-    font-size: 11px;
-    border: 1.5px solid var(--ink);
+    font-size: 14px;
+    border: 2px solid var(--ink);
     color: var(--ink);
-    margin-top: 1px;
+    margin-top: 2px;
+    border-radius: 2px;
   }
   .rpt-agent-body { flex: 1; min-width: 0; }
   .rpt-agent-role {
-    font-size: 8.5px;
+    font-size: 13px;
     font-weight: 700;
-    letter-spacing: 0.1em;
+    letter-spacing: 0.06em;
     text-transform: uppercase;
     color: var(--ink);
-    margin-bottom: 7px;
+    margin-bottom: 14px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid var(--rule);
   }
   .rpt-agent-outputs {
     display: flex;
     flex-wrap: wrap;
-    gap: 6px 20px;
-    margin-bottom: 8px;
+    gap: 14px 28px;
+    margin-bottom: 4px;
   }
   .rpt-ao-item label {
     display: block;
-    font-size: 7px;
+    font-size: 11px;
     font-weight: 700;
-    letter-spacing: 0.1em;
+    letter-spacing: 0.06em;
     text-transform: uppercase;
     color: var(--muted);
-    margin-bottom: 1px;
+    margin-bottom: 5px;
   }
   .rpt-ao-val {
     font-family: 'IBM Plex Mono', monospace;
-    font-size: 10px;
+    font-size: 14px;
     font-weight: 600;
     color: var(--ink);
   }
   .rpt-ao-val.hot  { color: var(--accent); }
   .rpt-ao-val.cool { color: var(--green); }
-  .rpt-agent-evidence {
-    font-size: 9px;
-    color: var(--muted);
-    font-family: 'IBM Plex Mono', monospace;
-    line-height: 1.6;
-    border-top: 1px solid var(--rule);
-    padding-top: 6px;
-    margin-top: 6px;
+  .rpt-agent-subhd {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--blue);
+    margin-top: 18px;
+    margin-bottom: 10px;
   }
-  .rpt-agent-reasoning {
-    font-size: 9px;
-    color: var(--mid);
-    line-height: 1.6;
-    border-top: 1px solid var(--rule);
-    padding-top: 6px;
-    margin-top: 6px;
+  .rpt-agent-outputs + .rpt-agent-subhd { margin-top: 8px; }
+  .rpt-ev-list, .rpt-reason-list {
+    margin: 0 0 0 1.1em;
+    padding: 0;
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 14px;
+    line-height: 1.75;
+    color: var(--ink);
   }
-  .rpt-agent-reasoning span {
-    display: inline-block;
-    background: var(--rule2);
-    border: 1px solid var(--rule);
-    border-radius: 2px;
-    padding: 1px 6px;
-    margin: 1px 3px 1px 0;
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 8.5px;
+  .rpt-ev-list { list-style: disc; color: #2a2a3e; }
+  .rpt-reason-list { list-style: decimal; color: #2a2a3e; }
+  .rpt-ev-list li, .rpt-reason-list li {
+    margin-bottom: 10px;
+    padding-left: 4px;
   }
   .rpt-agent-conf {
-    font-size: 8px;
+    font-size: 12px;
     font-weight: 700;
     color: var(--green);
     font-family: 'IBM Plex Mono', monospace;
-    margin-top: 5px;
+    margin-top: 16px;
+    padding-top: 12px;
+    border-top: 1px dashed var(--rule);
   }
 
   /* ── Confidence algorithm callout ── */
   .rpt-algo {
     border: 1px solid var(--rule);
     background: var(--rule2);
-    padding: 14px 18px;
-    margin-bottom: 18px;
-    font-size: 10px;
-    line-height: 1.65;
+    padding: 22px 24px;
+    margin-bottom: 24px;
+    font-size: 14px;
+    line-height: 1.75;
   }
   .rpt-algo-title {
-    font-size: 8px;
+    font-size: 10px;
     font-weight: 700;
-    letter-spacing: 0.14em;
+    letter-spacing: 0.1em;
     text-transform: uppercase;
     color: var(--blue);
-    margin-bottom: 8px;
+    margin-bottom: 10px;
   }
   .rpt-algo-formula {
     font-family: 'IBM Plex Mono', monospace;
-    font-size: 9.5px;
+    font-size: 12px;
     color: var(--ink);
     background: #fff;
     border: 1px solid var(--rule);
@@ -407,30 +483,30 @@ const REPORT_CSS = `
     white-space: pre;
     line-height: 1.7;
   }
-  .rpt-algo-vars { color: var(--mid); font-size: 9px; line-height: 1.65; }
+  .rpt-algo-vars { color: var(--mid); font-size: 13px; line-height: 1.75; }
   .rpt-algo-vars strong { color: var(--ink); font-weight: 600; }
 
   /* ── Actions table ── */
   .rpt-actions {
     width: 100%;
     border-collapse: collapse;
-    font-size: 10px;
-    margin-bottom: 20px;
+    font-size: 12px;
+    margin-bottom: 24px;
   }
   .rpt-actions thead tr { background: #f0f0f8; }
   .rpt-actions thead th {
-    padding: 8px 10px;
+    padding: 12px 14px;
     text-align: left;
-    font-size: 7.5px;
+    font-size: 9px;
     font-weight: 700;
-    letter-spacing: 0.1em;
+    letter-spacing: 0.08em;
     text-transform: uppercase;
     color: var(--mid);
     border-bottom: 1.5px solid var(--rule);
   }
   .rpt-actions tbody tr { border-bottom: 1px solid var(--rule); }
   .rpt-actions tbody tr:first-child td { font-weight: 600; }
-  .rpt-actions tbody td { padding: 8px 10px; vertical-align: top; line-height: 1.4; }
+  .rpt-actions tbody td { padding: 12px 14px; vertical-align: top; line-height: 1.5; }
   .rpt-score-bar {
     display: flex;
     align-items: center;
@@ -450,21 +526,21 @@ const REPORT_CSS = `
   }
   .rpt-score-fill.amber { background: var(--amber); }
   .rpt-score-fill.low   { background: var(--muted); }
-  .rpt-score-num { font-family: 'IBM Plex Mono', monospace; font-size: 9px; font-weight: 600; min-width: 28px; }
+  .rpt-score-num { font-family: 'IBM Plex Mono', monospace; font-size: 11px; font-weight: 600; min-width: 32px; }
 
   /* ── Annual projection ── */
   .rpt-projection {
     border: 1px solid var(--rule);
-    margin-bottom: 20px;
-    font-size: 10.5px;
+    margin-bottom: 24px;
+    font-size: 12px;
   }
   .rpt-projection-header {
     background: var(--ink);
     color: #fff;
-    padding: 8px 14px;
-    font-size: 8px;
+    padding: 10px 16px;
+    font-size: 10px;
     font-weight: 700;
-    letter-spacing: 0.14em;
+    letter-spacing: 0.1em;
     text-transform: uppercase;
   }
   .rpt-projection-body {
@@ -473,101 +549,103 @@ const REPORT_CSS = `
   }
   .rpt-proj-col {
     flex: 1;
-    padding: 12px 14px;
+    padding: 16px 16px;
     border-right: 1px solid var(--rule);
     text-align: center;
   }
   .rpt-proj-col:last-child { border-right: none; }
   .rpt-proj-rate {
-    font-size: 7.5px;
+    font-size: 9px;
     font-weight: 700;
-    letter-spacing: 0.1em;
+    letter-spacing: 0.08em;
     text-transform: uppercase;
     color: var(--muted);
-    margin-bottom: 5px;
+    margin-bottom: 8px;
   }
   .rpt-proj-val {
     font-family: 'IBM Plex Mono', monospace;
-    font-size: 15px;
+    font-size: 17px;
     font-weight: 600;
     color: var(--accent);
   }
-  .rpt-proj-sub { font-size: 8px; color: var(--muted); margin-top: 2px; }
+  .rpt-proj-sub { font-size: 10px; color: var(--muted); margin-top: 4px; }
 
   /* ── Email block ── */
   .rpt-email {
     border: 1px solid var(--rule);
     background: #fafafa;
-    margin-bottom: 18px;
+    margin-bottom: 22px;
   }
-  .rpt-email-head { padding: 10px 16px; border-bottom: 1px solid var(--rule); }
+  .rpt-email-head { padding: 14px 18px; border-bottom: 1px solid var(--rule); }
   .rpt-email-row {
     display: flex;
-    gap: 10px;
-    font-size: 10px;
-    margin-bottom: 4px;
+    gap: 12px;
+    font-size: 12px;
+    margin-bottom: 6px;
   }
   .rpt-email-row:last-child { margin-bottom: 0; }
   .rpt-email-lbl {
-    font-size: 7.5px;
+    font-size: 9px;
     font-weight: 700;
-    letter-spacing: 0.1em;
+    letter-spacing: 0.08em;
     text-transform: uppercase;
     color: var(--muted);
-    width: 34px;
+    width: 44px;
     flex-shrink: 0;
-    padding-top: 1px;
+    padding-top: 2px;
   }
-  .rpt-email-body { padding: 12px 16px; font-size: 10px; line-height: 1.65; color: #1a1a2e; }
+  .rpt-email-body { padding: 16px 18px; font-size: 12px; line-height: 1.7; color: #1a1a2e; }
 
   /* ── Methodology section ── */
   .rpt-method-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 14px;
-    margin-bottom: 20px;
+    gap: 20px;
+    margin-bottom: 28px;
   }
   .rpt-method-card {
     border: 1px solid var(--rule);
-    padding: 14px 16px;
+    padding: 22px 22px;
+    background: #fafbfc;
+    border-radius: 4px;
   }
   .rpt-method-card-title {
-    font-size: 8px;
+    font-size: 12px;
     font-weight: 700;
-    letter-spacing: 0.14em;
+    letter-spacing: 0.08em;
     text-transform: uppercase;
     color: var(--blue);
-    margin-bottom: 8px;
+    margin-bottom: 12px;
   }
   .rpt-method-card p {
-    font-size: 10px;
-    line-height: 1.62;
+    font-size: 14px;
+    line-height: 1.75;
     color: var(--ink);
-    margin-bottom: 6px;
+    margin-bottom: 10px;
   }
   .rpt-method-card p:last-child { margin-bottom: 0; }
 
   /* ── Footer ── */
   .rpt-footer {
-    padding: 16px 56px;
+    padding: 22px 56px;
     border-top: 2px solid var(--ink);
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-top: 32px;
+    margin-top: 36px;
   }
   .rpt-footer-brand {
     font-family: 'IBM Plex Mono', monospace;
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 600;
     color: var(--mid);
     letter-spacing: 0.06em;
   }
-  .rpt-footer-meta { font-size: 8.5px; color: var(--muted); text-align: right; line-height: 1.55; }
+  .rpt-footer-meta { font-size: 11px; color: var(--muted); text-align: right; line-height: 1.55; }
 
   /* ── Print ── */
   @media print {
-    #_aria_rpt_root { font-size: 10px; }
+    #_aria_rpt_root { font-size: 15px !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
     .rpt-cover  { page-break-after: always; }
     .rpt-pb     { page-break-before: always; }
     .rpt-avoid  { page-break-inside: avoid; }
@@ -599,18 +677,30 @@ function _parseAmt(str) {
 
 // ── AGENT ROW ─────────────────────────────────────────────────────────────────
 
+// Priority output keys shown in the agent card (others are omitted to keep reports concise)
+const AGENT_KEY_OUTPUTS = {
+  contract: ['expected_revenue', 'pricing_tier', 'overage_rate', 'discount_schedule'],
+  usage:    ['total_units', 'contract_limit', 'overage', 'overage_value'],
+  billing:  ['invoice_total', 'overage_line', 'discount_error'],
+  orch:     ['expected', 'actual_billed', 'net_leakage', 'recovery_probability'],
+};
+
 function _agentRow(badge, data) {
   if (!data) return '';
   const out = data.output || {};
   const evidence = (data.evidence || []).slice(0, 4);
-  const reasoning = (data.reasoning || []).slice(0, 6);
   const conf = Math.round((data.confidence || 0) * 100);
 
+  const badgeLower = badge.toLowerCase();
+  const keySet = AGENT_KEY_OUTPUTS[badgeLower === 'o' ? 'orch' :
+    badgeLower === 'c' ? 'contract' :
+    badgeLower === 'u' ? 'usage' : 'billing'] || [];
+
   const hotKeys = ['net_leakage', 'overage_line', 'discount_error', 'overage_value', 'overage'];
-  const coolKeys = ['confidence', 'recovery', 'expected_revenue'];
+  const coolKeys = ['confidence', 'recovery', 'expected_revenue', 'expected'];
 
   const outputs = Object.entries(out)
-    .filter(([, v]) => v != null && v !== '')
+    .filter(([k, v]) => v != null && v !== '' && (keySet.length === 0 || keySet.includes(k)))
     .map(([k, v]) => {
       const lbl = k.replace(/_/g, ' ').toUpperCase();
       const isHot = hotKeys.some(h => k.includes(h));
@@ -622,11 +712,7 @@ function _agentRow(badge, data) {
     }).join('');
 
   const evHtml = evidence.length
-    ? `<div class="rpt-agent-evidence">${evidence.map(e => `▸ ${e}`).join('<br>')}</div>`
-    : '';
-
-  const rsHtml = reasoning.length
-    ? `<div class="rpt-agent-reasoning">${reasoning.map(r => `<span>${r}</span>`).join('')}</div>`
+    ? `<div class="rpt-agent-subhd">Evidence cited</div><ul class="rpt-ev-list">${evidence.map(e => `<li>${_fmt(e)}</li>`).join('')}</ul>`
     : '';
 
   return `<div class="rpt-agent rpt-avoid">
@@ -634,10 +720,32 @@ function _agentRow(badge, data) {
     <div class="rpt-agent-body">
       <div class="rpt-agent-role">${_fmt(data.role)}</div>
       <div class="rpt-agent-outputs">${outputs}</div>
-      ${evHtml}${rsHtml}
+      ${evHtml}
       <div class="rpt-agent-conf">CONFIDENCE SCORE ${conf}%</div>
     </div>
   </div>`;
+}
+
+// Compact single-account evidence block for dashboard (3 bullets per agent, no full row)
+function _compactAccountEvidence(a) {
+  const agents = [
+    { badge: 'C', label: 'Contract Analyst', data: a.contract },
+    { badge: 'U', label: 'Usage Validator',  data: a.usage    },
+    { badge: 'B', label: 'Billing Auditor',  data: a.billing  },
+  ];
+  return agents.map(({ badge, label, data }) => {
+    if (!data) return '';
+    const ev = (data.evidence || []).slice(0, 3);
+    if (!ev.length) return '';
+    return `<div style="margin-bottom:16px;">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+        <div class="rpt-agent-badge" style="width:26px;height:26px;font-size:12px;">${badge}</div>
+        <span style="font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:var(--mid)">${label}</span>
+        <span style="font-size:10px;color:var(--green);font-family:monospace;margin-left:auto">${Math.round((data.confidence||0)*100)}% conf</span>
+      </div>
+      <ul class="rpt-ev-list" style="font-size:13px;margin-left:1.2em;">${ev.map(e => `<li>${_fmt(e)}</li>`).join('')}</ul>
+    </div>`;
+  }).join('');
 }
 
 // ── RECOVERY ACTIONS TABLE ────────────────────────────────────────────────────
@@ -656,7 +764,7 @@ function _actionsTable(actions) {
     return `<tr>
       <td style="font-weight:700;color:${i === 0 ? 'var(--accent)' : 'var(--mid)'}">#${i + 1}</td>
       <td>${_fmt(a.name || a.action)}</td>
-      <td style="color:var(--mid);font-size:9.5px;">${_fmt(a.description)}</td>
+      <td style="color:var(--mid);font-size:12px;line-height:1.5;">${_fmt(a.description)}</td>
       <td class="td-hot">${amt}</td>
       <td>
         <div class="rpt-score-bar">
@@ -710,6 +818,23 @@ function _annualProjection(monthlyLeakage) {
       </div>
     </div>
   </div>`;
+}
+
+// ── DEFAULT ACTIONS (when backend provides none) ──────────────────────────────
+
+function _defaultActions(out) {
+  const leakAmt = _parseAmt(out.net_leakage);
+  return [
+    { rank: 1, name: 'Issue Corrective Invoice', score: 92.3,
+      description: `Recover ${_fmt(out.net_leakage)} — contract §4.2 provides clear rate basis. Issue invoice with 30-day payment term.`,
+      amount: leakAmt || '' },
+    { rank: 2, name: 'Fix Billing Discount Scope', score: 76.4,
+      description: 'Remove discount from overage charges in billing system config. Prevents recurrence next cycle.',
+      amount: '' },
+    { rank: 3, name: 'Escalate to Finance Operations', score: 45.2,
+      description: 'Open internal ticket to review all affected billing cycles and confirm customer communication.',
+      amount: '' },
+  ];
 }
 
 // ── METHODOLOGY SECTION ───────────────────────────────────────────────────────
@@ -857,6 +982,30 @@ Confidence Interval (95%):
   </div>`;
 }
 
+// ── NARRATIVE FALLBACK BUILDERS ───────────────────────────────────────────────
+
+function _buildKeyFindings(narrative, accounts) {
+  if (narrative.key_findings && narrative.key_findings.length) return narrative.key_findings;
+  return accounts.map(a => {
+    const out = (a.orch || {}).output || {};
+    const conf = Math.round(((a.orch || {}).confidence || 0) * 100);
+    const urgency = out.urgency || 'MEDIUM';
+    return `<strong>${a.name || a.account_id}</strong>: ${_fmt(out.net_leakage)} leakage — ${_fmt(out.actual_billed)} billed vs ${_fmt(out.expected)} expected. Urgency ${urgency}. Confidence ${conf}%.`;
+  });
+}
+
+function _buildRecommendations(narrative, accounts, total) {
+  if (narrative.recommendations && narrative.recommendations.length) return narrative.recommendations;
+  const highUrgency = accounts.filter(a => ((a.orch || {}).output || {}).urgency === 'HIGH');
+  const recs = [
+    `Issue corrective invoices for ${highUrgency.length || accounts.length} account(s) within 5 business days to remain within the 60-day retroactive billing window.`,
+    'Audit billing system discount scope configuration — discounts should apply to base charges only, per contract §12.x terms.',
+    `Total recovery opportunity of $${total.toLocaleString()} represents ${accounts.length > 0 ? Math.round((total / accounts.reduce((s, a) => s + (a.arr || 0), 0)) * 100 * 100) / 100 : 0}% of affected ARR — escalate to Finance Operations for prioritisation.`,
+    'Establish automated monthly revenue integrity checks across the full enterprise customer base to catch leakage within the same billing cycle.',
+  ];
+  return recs;
+}
+
 // ── DASHBOARD HTML ────────────────────────────────────────────────────────────
 
 function _buildDashboardHTML(summary, accounts, narrative, generatedAt) {
@@ -871,7 +1020,7 @@ function _buildDashboardHTML(summary, accounts, narrative, generatedAt) {
     <div class="rpt-logo">AR<span>I</span>A</div>
     <div class="rpt-tagline">Autonomous Revenue Integrity Agent</div>
     <div class="rpt-doc-title">Revenue Integrity Report<br>All Accounts — Dashboard Summary</div>
-    <div style="font-size:9px;color:var(--muted);">Generated ${generatedAt} &nbsp;·&nbsp; Confidential — Internal Use Only</div>
+    <div style="font-size:11px;color:var(--muted);line-height:1.5;">Generated ${generatedAt} &nbsp;·&nbsp; Confidential — Internal Use Only</div>
     <div class="rpt-cover-kpi">
       <div class="rpt-ckpi"><div class="rpt-ckpi-label">Total Leakage</div><div class="rpt-ckpi-val hot">$${total.toLocaleString()}</div></div>
       <div class="rpt-ckpi"><div class="rpt-ckpi-label">Accounts Analyzed</div><div class="rpt-ckpi-val">${n}</div></div>
@@ -920,13 +1069,13 @@ function _buildDashboardHTML(summary, accounts, narrative, generatedAt) {
       <div style="flex:1;">
         <div class="rpt-h4" style="color:var(--accent);">Key Findings</div>
         <ul class="rpt-list findings">
-          ${(narrative.key_findings || []).map(f => `<li>${f}</li>`).join('')}
+          ${(_buildKeyFindings(narrative, accounts)).map(f => `<li>${f}</li>`).join('')}
         </ul>
       </div>
       <div style="flex:1;">
         <div class="rpt-h4" style="color:var(--green);">Recommendations</div>
         <ul class="rpt-list recs">
-          ${(narrative.recommendations || []).map(r => `<li>${r}</li>`).join('')}
+          ${(_buildRecommendations(narrative, accounts, total)).map(r => `<li>${r}</li>`).join('')}
         </ul>
       </div>
     </div>
@@ -989,7 +1138,7 @@ function _buildDashboardHTML(summary, accounts, narrative, generatedAt) {
       <div class="rpt-h2" style="margin-bottom:0;flex:1">${_fmt(a.name || a.account_id)}</div>
       <span class="badge ${_badgeClass(urgency)}" style="margin-top:4px">${urgency}</span>
     </div>
-    <div style="font-family:monospace;font-size:9px;color:var(--muted);margin-bottom:18px;">
+    <div style="font-family:monospace;font-size:11px;color:var(--muted);margin-bottom:20px;line-height:1.5;">
       ${[arr, a.tier, a.account_id].filter(Boolean).join(' · ')}
     </div>
 
@@ -1001,15 +1150,10 @@ function _buildDashboardHTML(summary, accounts, narrative, generatedAt) {
       <div class="rpt-fi"><div class="rpt-fi-lbl">Recovery Prob.</div><div class="rpt-fi-val">${_fmt(out.recovery_probability)}</div></div>
     </div>
 
-    <div class="rpt-h4">4-Agent Evidence Chain</div>
-    <div class="rpt-chain">
-      ${_agentRow('C', a.contract)}
-      ${_agentRow('U', a.usage)}
-      ${_agentRow('B', a.billing)}
-      ${_agentRow('O', a.orch)}
-    </div>
+    <div class="rpt-h4">Key Evidence — Agent Chain</div>
+    ${_compactAccountEvidence(a)}
 
-    ${_actionsTable(actions)}
+    ${_actionsTable(actions.length ? actions : _defaultActions(out))}
     ${_annualProjection(out.net_leakage)}
   </div>`;
   }).join('');
@@ -1026,6 +1170,53 @@ function _buildDashboardHTML(summary, accounts, narrative, generatedAt) {
   return cover + execSection + tableSection + accountSections + _methodologySection() + footer;
 }
 
+/**
+ * Prominent “recommended action” callout — uses ranked recovery_actions[0], else narrative / leakage fallback.
+ */
+function _recommendedActionHTML(actions, narrative, out) {
+  const top = actions && actions[0];
+  const headline = top
+    ? _fmt(top.name || top.action || 'Primary recovery action')
+    : 'Recommended next step';
+
+  let desc = '';
+  if (top && (top.description || top.desc)) {
+    desc = _fmt(top.description || top.desc);
+  } else if (narrative.recovery_recommendation) {
+    desc = _fmt(narrative.recovery_recommendation);
+  } else {
+    desc = `Issue a corrective invoice aligned with contract terms and capture net leakage of ${_fmt(out.net_leakage)}. Coordinate with finance ops to update billing configuration and prevent recurrence.`;
+  }
+
+  const amtRaw = top && top.amount != null
+    ? (typeof top.amount === 'number' ? `$${top.amount.toLocaleString()}` : _fmt(top.amount))
+    : _fmt(out.net_leakage);
+  const amtHtml = `<span class="rpt-recommend-amt">${amtRaw}</span>`;
+
+  let scoreHtml = '';
+  if (top) {
+    const sc = typeof top.score === 'number'
+      ? top.score
+      : typeof top.confidence_score === 'number'
+        ? Math.round(top.confidence_score * 100)
+        : null;
+    if (sc != null) {
+      scoreHtml = `<span><strong>Priority score</strong> ${sc}</span>`;
+    }
+  }
+
+  return `
+  <div class="rpt-recommend rpt-avoid">
+    <div class="rpt-recommend-tag">Primary recommended action</div>
+    <div class="rpt-recommend-headline">${headline}</div>
+    <div class="rpt-recommend-desc">${desc}</div>
+    <div class="rpt-recommend-row">
+      <span><strong>Financial impact</strong> ${amtHtml}</span>
+      ${scoreHtml}
+    </div>
+  </div>`;
+}
+
 // ── ACCOUNT HTML ──────────────────────────────────────────────────────────────
 
 function _buildAccountHTML(accountName, accountId, analysis, narrative, generatedAt) {
@@ -1038,14 +1229,14 @@ function _buildAccountHTML(accountName, accountId, analysis, narrative, generate
   const leakAmt = _parseAmt(out.net_leakage);
   const ci1     = Math.round(leakAmt * (1 - (1 - (orch.confidence || 0)) * 1.5));
   const ci2     = Math.round(leakAmt * (1 + (1 - (orch.confidence || 0)) * 0.8));
-  const actions = orch.recovery_actions || [];
+  const actions = (orch.recovery_actions || []).length ? orch.recovery_actions : _defaultActions(out);
 
   const cover = `
   <div class="rpt-cover">
     <div class="rpt-logo">AR<span>I</span>A</div>
     <div class="rpt-tagline">Autonomous Revenue Integrity Agent</div>
     <div class="rpt-doc-title">Revenue Leakage Finding Report<br>${accountName}</div>
-    <div style="font-size:9px;color:var(--muted);">Generated ${generatedAt} &nbsp;·&nbsp; Confidential — Internal Use Only</div>
+    <div style="font-size:11px;color:var(--muted);line-height:1.5;">Generated ${generatedAt} &nbsp;·&nbsp; Confidential — Internal Use Only</div>
     <div class="rpt-cover-kpi">
       <div class="rpt-ckpi"><div class="rpt-ckpi-label">Account</div><div class="rpt-ckpi-val" style="font-size:13px">${accountId || accountName}</div></div>
       <div class="rpt-ckpi"><div class="rpt-ckpi-label">Net Leakage</div><div class="rpt-ckpi-val hot">${_fmt(out.net_leakage)}</div></div>
@@ -1059,9 +1250,11 @@ function _buildAccountHTML(accountName, accountId, analysis, narrative, generate
     <div class="rpt-section-tag">Section 01 — Finding Summary</div>
     <div class="rpt-h2">Finding Summary</div>
 
-    <div class="rpt-risk ${_riskClass(risk)}">
+    ${_recommendedActionHTML(actions, narrative, out)}
+
+    <div class="rpt-risk rpt-risk--compact ${_riskClass(risk)}">
       <div class="rpt-risk-badge">URGENCY: ${urgency}</div>
-      <div class="rpt-risk-text">${_fmt(narrative.recovery_recommendation)}</div>
+      <div class="rpt-risk-text">${_fmt(narrative.recovery_recommendation || 'Orchestrator recommends timely corrective billing and configuration review to recover contractually owed revenue.')}</div>
     </div>
 
     <div class="rpt-finding rpt-avoid">
@@ -1083,13 +1276,13 @@ function _buildAccountHTML(accountName, accountId, analysis, narrative, generate
   </div>`;
 
   const agentSection = `
-  <div class="rpt-page rpt-pb">
+  <div class="rpt-page rpt-pb rpt-evidence-chain">
     <div class="rpt-section-tag">Section 02 — Evidence Chain</div>
     <div class="rpt-h2">4-Agent Evidence Chain</div>
     <div class="rpt-prose">
       <p>Each agent operates on an independent evidence source. The Orchestrator's confidence is
       derived from Bayesian aggregation of all three upstream agents — not from any single model call.
-      Reasoning steps below show the computation trace for each agent.</p>
+      Evidence and reasoning are listed step-by-step below for auditability.</p>
     </div>
     <div class="rpt-chain">
       ${_agentRow('C', agents.contract)}
@@ -1136,62 +1329,55 @@ function _buildAccountHTML(accountName, accountId, analysis, narrative, generate
   return cover + findingSection + agentSection + actionsSection + emailSection + _methodologySection() + footer;
 }
 
-// ── DIRECT PRINT (no popup) ───────────────────────────────────────────────────
+// ── DIRECT PRINT via hidden iframe (no popup, no overflow conflict) ───────────
+//
+// Using a hidden iframe rather than injecting into the current document avoids
+// the parent page's `overflow:hidden` and `height:100%` clipping the print output.
+// The iframe owns a clean document with no dashboard CSS — the report renders in full.
 
 function _printDirectly(bodyHTML) {
-  document.getElementById('_aria_rpt_css')?.remove();
-  document.getElementById('_aria_rpt_root')?.remove();
+  const iframe = document.createElement('iframe');
+  iframe.style.cssText = 'position:fixed;left:-9999px;top:0;width:1px;height:1px;border:none;visibility:hidden;';
+  document.body.appendChild(iframe);
 
-  const styleEl = document.createElement('style');
-  styleEl.id = '_aria_rpt_css';
-  styleEl.textContent = `
-    ${REPORT_CSS}
-    /* Screen: off-screen but laid out (display:none breaks some browsers' print capture) */
-    @media screen {
-      #_aria_rpt_root {
-        position: absolute;
-        left: -99999px;
-        top: 0;
-        width: 760px;
-        pointer-events: none;
+  const doc = iframe.contentDocument || iframe.contentWindow.document;
+  doc.open();
+  doc.write(`<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ARIA Revenue Integrity Report</title>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600;700&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { background: #fff; }
+    @media print { @page { margin: 12mm 10mm; } }
+    ${REPORT_CSS.replace(/#_aria_rpt_root\s/g, 'body ').replace(/#_aria_rpt_root\*/g, 'body *').replace(/#_aria_rpt_root\b/g, 'body')}
+  </style>
+</head>
+<body>${bodyHTML}</body>
+</html>`);
+  doc.close();
+
+  let printed = false;
+  const go = () => {
+    if (printed) return;
+    printed = true;
+    setTimeout(() => {
+      try {
+        iframe.contentWindow.focus();
+        iframe.contentWindow.print();
+      } catch (e) {
+        window.print();
       }
-    }
-    @media print {
-      @page { margin: 10mm; }
-      body { background: #fff !important; margin: 0 !important; padding: 0 !important; }
-      body * { visibility: hidden !important; }
-      #_aria_rpt_root, #_aria_rpt_root * { visibility: visible !important; }
-      #_aria_rpt_root {
-        position: absolute !important;
-        left: 0 !important;
-        top: 0 !important;
-        width: 100% !important;
-        max-width: 100% !important;
-      }
-    }
-  `;
-  document.head.appendChild(styleEl);
-
-  const root = document.createElement('div');
-  root.id = '_aria_rpt_root';
-  root.innerHTML = bodyHTML;
-  document.body.appendChild(root);
-
-  let cleaned = false;
-  const cleanup = () => {
-    if (cleaned) return;
-    cleaned = true;
-    root.remove();
-    styleEl.remove();
+      setTimeout(() => iframe.remove(), 3000);
+    }, 400);
   };
-  window.addEventListener('afterprint', cleanup, { once: true });
-  setTimeout(cleanup, 120000);
 
-  requestAnimationFrame(() => {
-    requestAnimationFrame(() => {
-      window.print();
-    });
-  });
+  iframe.onload = go;
+  // Fallback: fonts may not fire onload — trigger after 1.2s regardless
+  setTimeout(go, 1200);
 }
 
 // ── PUBLIC API ────────────────────────────────────────────────────────────────

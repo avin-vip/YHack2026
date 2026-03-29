@@ -1,29 +1,102 @@
 // ── RIGHT DOCK PANEL: email, billing payload, ranked actions, report, feedback ──
 import { agentData, state } from './state.js';
-
-/** Opens default mail client with drafted recovery message (mailto). For SMTP/API sending, use a backend relay. */
-export function sendRecoveryEmail() {
-  const email = agentData.orch?.email || {};
-  const rawTo = (email.to || 'finance-ops@acme.com').split(/[;,]/)[0].trim();
-  const subject = email.subject || 'Billing correction';
-  const body = typeof email.body === 'string'
-    ? email.body.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim()
-    : '';
-  const q = `mailto:${encodeURIComponent(rawTo)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body || '(see ARIA dock for full text)')}`;
-  window.location.href = q;
-}
 import { exportAccountReport } from './report.js';
 
+function _fmt(v) {
+  return v == null || v === '' ? '—' : String(v);
+}
+
+// ── EMAIL TEMPLATE BUILDERS ───────────────────────────────────────────────────
+
+/**
+ * Builds the structured plain-text body used in mailto: links.
+ * Multi-line with clear sections so it reads well in any mail client.
+ */
+function _buildPlainTextEmail(emailData) {
+  const o  = agentData.orch?.output  || {};
+  const bp = agentData.orch?.billing_payload || {};
+  const ev = (agentData.orch?.evidence || agentData.contract?.evidence || []).slice(0, 3);
+
+  const inv  = bp.invoice_id || bp.id || 'INV-CORRECTION';
+  const amt  = bp.amount != null ? `$${Number(bp.amount).toLocaleString()}` : _fmt(o.net_leakage);
+  const due  = bp.due_days  || 30;
+  const today = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+
+  const sep = '─'.repeat(42);
+
+  const evSection = ev.length
+    ? `CONTRACTUAL BASIS\n${sep}\n${ev.map(e => `  • ${e}`).join('\n')}\n\n`
+    : '';
+
+  return [
+    `Date: ${today}`,
+    `Reference: ${inv}`,
+    '',
+    'Dear Finance Team,',
+    '',
+    'Following an automated revenue integrity audit conducted by ARIA, we have identified a billing discrepancy between your executed contract terms, recorded usage, and the most recent invoice.',
+    '',
+    `FINANCIAL SUMMARY`,
+    sep,
+    `  Expected Revenue      ${_fmt(o.expected).padStart(12)}`,
+    `  Amount Invoiced       ${_fmt(o.actual_billed).padStart(12)}`,
+    `  ` + '─'.repeat(38),
+    `  Net Discrepancy       ${_fmt(o.net_leakage).padStart(12)}  ← UNDERBILLED`,
+    '',
+    evSection.trim() ? evSection : '',
+    `CORRECTIVE INVOICE`,
+    sep,
+    `  Invoice No.  ${inv}`,
+    `  Amount Due   ${amt}`,
+    `  Due Date     Within ${due} days of this notice (per §4.2)`,
+    '',
+    'Please review the attached corrective invoice and arrange remittance within the stated period. Should you have questions regarding the calculation methodology or wish to discuss the findings, please contact Finance Operations directly.',
+    '',
+    'Best regards,',
+    '',
+    'Finance Operations',
+    'ARIA Revenue Recovery System',
+    'finance-ops@internal',
+  ].filter(l => l !== undefined).join('\n');
+}
+
+/** Opens default mail client with the structured plain-text draft. */
+export function sendRecoveryEmail() {
+  const email   = agentData.orch?.email || {};
+  const rawTo   = (email.to || 'finance-ops@acme.com').split(/[;,]/)[0].trim();
+  const subject = email.subject
+    || `Billing Correction Notice — ${_fmt((agentData.orch?.output || {}).net_leakage)} Discrepancy`;
+
+  const body = state.lastEmailPlain?.trim() || _buildPlainTextEmail(email);
+
+  const q =
+    `mailto:${encodeURIComponent(rawTo)}` +
+    `?subject=${encodeURIComponent(subject)}` +
+    `&body=${encodeURIComponent(body)}`;
+  window.location.href = q;
+}
+
 export function updateEmail(emailData) {
+  state.lastEmailPlain = _buildPlainTextEmail(emailData);
+
+  const o   = agentData.orch?.output  || {};
+  const bp  = agentData.orch?.billing_payload || {};
+  const inv = bp.invoice_id || bp.id || 'INV-CORRECTION';
+  const amt = bp.amount != null ? `$${Number(bp.amount).toLocaleString()}` : _fmt(o.net_leakage);
+  const to  = emailData.to || 'finance-ops@acme.com';
+  const sub = emailData.subject || `Billing Correction — ${_fmt(o.net_leakage)} Discrepancy`;
+
   document.getElementById('tag-email').textContent = 'READY';
   document.getElementById('tag-email').className = 'dock-tag live';
   const el = document.getElementById('db-email');
   el.className = 'dock-body ready';
   el.innerHTML = `
-    <div class="field"><span class="field-key">TO</span><span class="field-val">${emailData.to || 'finance-ops@acme.com'}</span></div>
-    <div class="field"><span class="field-key">SUBJ</span><span class="field-val acid">${emailData.subject || 'Billing Correction — Oct Overage'}</span></div>
-    <div style="margin-top:5px;font-size:8px;color:var(--mid);line-height:1.65">${emailData.body || 'Corrective invoice <span style="color:var(--hot);font-weight:600">INV-2024-889</span> for <span style="color:var(--hot);font-weight:600">$21,250</span> has been issued. 840 overage units uncaptured. Payment due within 30 days per §4.2.'}</div>
-    <div style="margin-top:10px"><button type="button" class="report-btn" style="font-size:9px;padding:6px 12px" onclick="sendRecoveryEmail()">OPEN IN EMAIL CLIENT</button></div>`;
+    <div class="field"><span class="field-key">TO</span><span class="field-val">${to}</span></div>
+    <div class="field"><span class="field-key">SUBJ</span><span class="field-val acid">${sub}</span></div>
+    <div class="field"><span class="field-key">REF</span><span class="field-val hot">${inv} · ${amt}</span></div>
+    <div style="margin-top:8px">
+      <button type="button" class="report-btn" style="font-size:9px;padding:5px 10px;width:100%" onclick="sendRecoveryEmail()">↗ SEND RECOVERY EMAIL</button>
+    </div>`;
 }
 
 export function updateBillingPayload(payload) {
@@ -126,6 +199,7 @@ export function resetDock() {
     <div class="field"><span class="field-key">STATUS</span><span class="field-val" style="color:var(--rule2)">QUEUED</span></div>`;
 
   state.lastBillingPayload = null;
+  state.lastEmailPlain = null;
   document.getElementById('reportBlock').classList.remove('show');
   document.getElementById('feedbackBar').classList.remove('show');
   document.getElementById('fb-result').classList.remove('show');

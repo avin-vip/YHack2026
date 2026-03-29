@@ -45,9 +45,9 @@ You MUST respond with valid JSON in this exact structure:
     }
   ],
   "email": {
-    "to": "string",
-    "subject": "string",
-    "body": "string (professional, concise recovery email)"
+    "to": "string (finance contact email)",
+    "subject": "string (e.g. 'Billing Correction Notice — $21,250 Discrepancy — Oct 2024')",
+    "body": "string (professional multi-paragraph plain text: opening sentence summarising the finding, then the core discrepancy and contractual basis in 1-2 sentences citing specific contract clauses, then the corrective invoice reference and due date, then a closing sentence requesting confirmation)"
   },
   "billing_payload": {
     "invoice_id": "string (new corrective invoice ID)",

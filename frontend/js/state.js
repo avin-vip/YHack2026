@@ -11,6 +11,8 @@ export const state = {
   currentAccountName: null,
   /** Last billing payload shown in the dock (for copy JSON). */
   lastBillingPayload: null,
+  /** Plain-text email body last shown in dock (for mailto — matches what the user sees). */
+  lastEmailPlain: null,
 };
 
 export const STEPS = [
