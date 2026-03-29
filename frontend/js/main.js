@@ -92,6 +92,10 @@ function switchMode(mode, accountId, accountData) {
       resetAll();
       updateDetailHeader(accountId);
       hydrateDetailFromCompletedData();
+    } else if (accountId) {
+      // Pre-run drill-down from OPS: open selected account in clean idle state.
+      resetAll();
+      updateDetailHeader(accountId);
     }
 
     // Redraw edges after layout change

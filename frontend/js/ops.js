@@ -65,8 +65,8 @@ export function renderOpsView(container) {
     const card = document.getElementById(`card-${a.id}`);
     if (card) {
       card.addEventListener('click', () => {
-        if (onDrillDown && cardStates[a.id]?.phase === 'done') {
-          onDrillDown(a.id, cardStates[a.id].data);
+        if (onDrillDown) {
+          onDrillDown(a.id, cardStates[a.id]?.data || null);
         }
       });
     }
@@ -276,9 +276,7 @@ function finalizeBatch() {
       const card = document.getElementById(`card-${a.id}`);
       if (card && onDrillDown) {
         card.addEventListener('click', () => {
-          if (cardStates[a.id]?.phase === 'done') {
-            onDrillDown(a.id, cardStates[a.id].data);
-          }
+          onDrillDown(a.id, cardStates[a.id]?.data || null);
         });
       }
     });

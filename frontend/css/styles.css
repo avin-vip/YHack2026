@@ -811,6 +811,7 @@ header {
   transition: all 0.3s;
   position: relative;
   overflow: hidden;
+  cursor: pointer;
 }
 
 .ops-card::before {
@@ -835,9 +836,6 @@ header {
   box-shadow: 0 0 8px var(--cool-glow);
 }
 
-.ops-card.complete {
-  cursor: pointer;
-}
 .ops-card.complete:hover {
   border-color: var(--cool);
   box-shadow: 0 0 24px rgba(62,207,170,0.08);
