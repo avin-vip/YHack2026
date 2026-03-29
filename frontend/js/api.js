@@ -168,6 +168,59 @@ export async function streamBatchAnalyze(payload, { onEvent, onError, onDone } =
 }
 
 /**
+ * Generate dashboard report narrative from analysis results.
+ * Returns { narrative, generated_at } or null.
+ */
+export async function generateDashboardReport(summary, accounts) {
+  try {
+    const res = await fetch(`${API_BASE}/reports/dashboard`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ summary, accounts }),
+    });
+    if (!res.ok) return null;
+    return await res.json();
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Generate single-account report narrative.
+ * Returns { narrative, generated_at } or null.
+ */
+export async function generateAccountReport(accountName, analysis) {
+  try {
+    const res = await fetch(`${API_BASE}/reports/account`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ account_name: accountName, analysis }),
+    });
+    if (!res.ok) return null;
+    return await res.json();
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Upload a PDF contract and create a persistent account scenario.
+ */
+export async function uploadContract(file) {
+  const form = new FormData();
+  form.append('file', file);
+  const res = await fetch(`${API_BASE}/contracts/upload`, {
+    method: 'POST',
+    body: form,
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || `Upload failed (${res.status})`);
+  }
+  return await res.json();
+}
+
+/**
  * Get audit trail for an account.
  */
 export async function getAuditTrail(accountId) {
