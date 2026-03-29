@@ -474,7 +474,6 @@ window.addEventListener('load', async () => {
   state.backendUp = backendUp;
   if (backendUp) {
     console.log('[ARIA] Backend connected at localhost:8000');
-    backendPromise = analyzeAccount('acme-ent-90210');
 
     // Fetch real account list and re-render the ops grid
     listAccounts().then(accounts => {

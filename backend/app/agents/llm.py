@@ -47,6 +47,38 @@ AVAILABLE_MODELS = {
     **{k: v["name"] for k, v in LAVA_MODELS.items()},
 }
 
+# ── Request shaping + shared HTTP clients ──
+_PROVIDER_CONCURRENCY = {
+    "gemini": int(os.getenv("ARIA_GEMINI_CONCURRENCY", "4")),
+    "k2": int(os.getenv("ARIA_K2_CONCURRENCY", "3")),
+    "gpt-4o": int(os.getenv("ARIA_GPT4O_CONCURRENCY", "3")),
+    "claude-sonnet": int(os.getenv("ARIA_CLAUDE_SONNET_CONCURRENCY", "2")),
+    "claude-haiku": int(os.getenv("ARIA_CLAUDE_HAIKU_CONCURRENCY", "3")),
+    "kimi": int(os.getenv("ARIA_KIMI_CONCURRENCY", "3")),
+}
+_PROVIDER_SEMAPHORES: dict[str, asyncio.Semaphore] = {}
+
+_HTTP_CLIENTS: dict[str, httpx.AsyncClient] = {}
+_HTTP_CLIENT_LIMITS = httpx.Limits(
+    max_connections=int(os.getenv("ARIA_HTTP_MAX_CONNECTIONS", "100")),
+    max_keepalive_connections=int(os.getenv("ARIA_HTTP_KEEPALIVE_CONNECTIONS", "20")),
+)
+
+
+def _get_provider_semaphore(provider: str) -> asyncio.Semaphore:
+    if provider not in _PROVIDER_SEMAPHORES:
+        limit = max(1, _PROVIDER_CONCURRENCY.get(provider, 2))
+        _PROVIDER_SEMAPHORES[provider] = asyncio.Semaphore(limit)
+    return _PROVIDER_SEMAPHORES[provider]
+
+
+def _get_http_client(client_key: str) -> httpx.AsyncClient:
+    client = _HTTP_CLIENTS.get(client_key)
+    if client is None:
+        client = httpx.AsyncClient(timeout=120.0, limits=_HTTP_CLIENT_LIMITS)
+        _HTTP_CLIENTS[client_key] = client
+    return client
+
 
 class LLMClient:
     """LLM client abstraction. Supports Gemini, K2, and Lava-routed providers."""
@@ -86,30 +118,38 @@ class LLMClient:
     async def generate(self, system_prompt: str, user_prompt: str) -> dict:
         """Send a prompt to the LLM and return parsed JSON response."""
         self._last_raw = None
-        start = time.time()
+        total_start = time.time()
+        queue_start = total_start
+        queue_wait_ms = 0
+        llm_latency_ms = 0
         error_msg = None
         result = None
 
         try:
-            if self.provider == "gemini":
-                result = await self._generate_gemini(system_prompt, user_prompt)
-            elif self.provider == "k2":
-                result = await self._generate_k2(system_prompt, user_prompt)
-            elif self.provider in LAVA_MODELS:
-                fmt = self.lava_config["format"]
-                if fmt == "anthropic":
-                    result = await self._generate_lava_anthropic(system_prompt, user_prompt)
+            semaphore = _get_provider_semaphore(self.provider)
+            async with semaphore:
+                queue_wait_ms = round((time.time() - queue_start) * 1000)
+                llm_start = time.time()
+                if self.provider == "gemini":
+                    result = await self._generate_gemini(system_prompt, user_prompt)
+                elif self.provider == "k2":
+                    result = await self._generate_k2(system_prompt, user_prompt)
+                elif self.provider in LAVA_MODELS:
+                    fmt = self.lava_config["format"]
+                    if fmt == "anthropic":
+                        result = await self._generate_lava_anthropic(system_prompt, user_prompt)
+                    else:
+                        result = await self._generate_lava_openai(system_prompt, user_prompt)
                 else:
-                    result = await self._generate_lava_openai(system_prompt, user_prompt)
-            else:
-                raise ValueError(f"Provider {self.provider} not implemented")
+                    raise ValueError(f"Provider {self.provider} not implemented")
+                llm_latency_ms = round((time.time() - llm_start) * 1000)
             return result
         except Exception as e:
             error_msg = str(e)
             raise
         finally:
             if self.run_logger:
-                latency_ms = round((time.time() - start) * 1000)
+                latency_ms = round((time.time() - total_start) * 1000)
                 self.run_logger.log_call(
                     agent=self.agent_name or "unknown",
                     provider=self.provider,
@@ -119,6 +159,8 @@ class LLMClient:
                     raw_response=self._last_raw,
                     parsed_response=result,
                     latency_ms=latency_ms,
+                    queue_wait_ms=queue_wait_ms,
+                    llm_latency_ms=llm_latency_ms,
                     success=error_msg is None,
                     error=error_msg,
                 )
@@ -173,10 +215,10 @@ class LLMClient:
         }
 
         try:
-            async with httpx.AsyncClient(timeout=120.0) as client:
-                resp = await client.post(self.k2_endpoint, json=payload, headers=headers)
-                resp.raise_for_status()
-                data = resp.json()
+            client = _get_http_client("k2")
+            resp = await client.post(self.k2_endpoint, json=payload, headers=headers)
+            resp.raise_for_status()
+            data = resp.json()
         except httpx.HTTPStatusError as e:
             raise RuntimeError(
                 f"K2 API returned {e.response.status_code}: {e.response.text[:500]}"
@@ -209,10 +251,10 @@ class LLMClient:
 
         name = self.lava_config["name"]
         try:
-            async with httpx.AsyncClient(timeout=120.0) as client:
-                resp = await client.post(self._lava_url(), json=payload, headers=headers)
-                resp.raise_for_status()
-                data = resp.json()
+            client = _get_http_client("lava-openai")
+            resp = await client.post(self._lava_url(), json=payload, headers=headers)
+            resp.raise_for_status()
+            data = resp.json()
         except httpx.HTTPStatusError as e:
             raise RuntimeError(
                 f"Lava/{name} returned {e.response.status_code}: {e.response.text[:500]}"
@@ -244,10 +286,10 @@ class LLMClient:
 
         name = self.lava_config["name"]
         try:
-            async with httpx.AsyncClient(timeout=120.0) as client:
-                resp = await client.post(self._lava_url(), json=payload, headers=headers)
-                resp.raise_for_status()
-                data = resp.json()
+            client = _get_http_client("lava-anthropic")
+            resp = await client.post(self._lava_url(), json=payload, headers=headers)
+            resp.raise_for_status()
+            data = resp.json()
         except httpx.HTTPStatusError as e:
             raise RuntimeError(
                 f"Lava/{name} returned {e.response.status_code}: {e.response.text[:500]}"

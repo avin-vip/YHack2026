@@ -261,7 +261,7 @@ function animateTotalLeakage() {
 
 function finalizeBatch() {
   const btn = document.getElementById('ops-analyze-btn');
-  btn.textContent = '✓ COMPLETE';
+  btn.textContent = '↻ RUN AGAIN';
   btn.disabled = false;
   btn.className = 'btn ops-analyze-btn done';
   btn.onclick = () => {
