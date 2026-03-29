@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ARIA — Revenue Recovery Operations</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600;700&family=Bebas+Neue&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+
+<div class="shell">
+  <!-- ── HEADER ── -->
+  <header>
+    <div class="hd-brand">
+      <div class="hd-sigil"></div>
+      <div>
+        <div class="hd-name">ARIA</div>
+        <div class="hd-sub">REVENUE RECOVERY OPS</div>
+      </div>
+    </div>
+
+    <!-- Mode toggle: OPS / DETAIL -->
+    <div class="view-toggle mode-toggle">
+      <button class="vt-btn active" id="mode-ops" onclick="switchMode('ops')">OPS</button>
+      <button class="vt-btn" id="mode-detail" onclick="switchMode('detail')">DETAIL</button>
+    </div>
+
+    <!-- Dynamic account meta (updates on drill-down) -->
+    <div class="hd-meta" id="detail-controls" style="display:none">
+      <button class="btn back-btn" id="back-btn" onclick="switchMode('ops')" style="display:none">← BACK</button>
+      <div class="hd-sep"></div>
+      <span class="val" id="hd-account-id">ACME-ENT-90210</span>
+      <div class="hd-sep"></div>
+      <span>ARR</span><span class="val" id="hd-arr">$2.1M</span>
+      <div class="hd-sep"></div>
+      <span>CONTRACT</span><span class="val" id="hd-contract">CTR-12345</span>
+    </div>
+
+    <div class="hd-status">
+      <div class="pulse-dot" id="pulseDot"></div>
+      <span id="statusText" style="color:var(--dim);letter-spacing:0.1em;font-size:10px;font-weight:600;">STANDBY</span>
+    </div>
+
+    <div class="hd-spacer"></div>
+
+    <div class="view-toggle" id="detail-controls-right" style="display:none">
+      <button class="vt-btn active" id="vt-summary" onclick="setView('summary')">SUMMARY</button>
+      <button class="vt-btn" id="vt-raw" onclick="setView('raw')">RAW TRACE</button>
+    </div>
+
+    <div class="step-pill" id="stepPill" style="opacity:0;transition:opacity 0.3s;">
+      <span class="step-n" id="stepN">0</span>
+      <span style="color:var(--rule2)">/</span>
+      <span style="color:var(--dim)">5</span>
+      <span class="step-hint" id="stepHint"></span>
+    </div>
+
+    <div class="autoplay-toggle" onclick="toggleAutoplay()" id="autoplayToggle">
+      <div class="toggle-track" id="autoTrack"><div class="toggle-thumb"></div></div>
+      <span>AUTO</span>
+    </div>
+
+    <div class="hd-controls">
+      <button class="btn" id="resetBtn" onclick="resetAll()" style="display:none">↺ RESET</button>
+      <button class="btn primary" id="advBtn" onclick="advance()">▶ BEGIN</button>
+    </div>
+  </header>
+
+  <!-- ── BODY ── -->
+  <div class="body" id="mainBody">
+
+    <!-- ═══ OPS VIEW (multi-account grid) ═══ -->
+    <div id="opsContainer" class="ops-container"></div>
+
+    <!-- ═══ DETAIL VIEW (single-account step-through) ═══ -->
+    <div id="detailView" class="detail-view" style="display:none">
+
+      <!-- LEFT PANEL: Terminals (resizable) -->
+      <div class="panel panel-left" id="panelLeft">
+        <div class="terminals">
+          <!-- CONTRACT -->
+          <div class="term-pane clickable" id="tp-contract" onclick="openReasoning('contract')">
+            <div class="term-header">
+              <div class="term-agent">
+                <div class="term-dot" id="td-contract"></div>
+                <span style="color:var(--text)">CONTRACT</span>
+                <span style="color:var(--dim);font-size:8px;letter-spacing:0.06em">ANALYST</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:8px">
+                <div class="term-state" id="ts-contract">IDLE</div>
+              </div>
+            </div>
+            <div class="conf-bar-wrap" id="cb-contract">
+              <div class="conf-label"><span>CONFIDENCE</span><span id="cv-contract">0%</span></div>
+              <div class="conf-track"><div class="conf-fill" id="cf-contract"></div></div>
+            </div>
+            <div class="term-body" id="tb-contract"></div>
+            <div class="term-output" id="to-contract">—</div>
+          </div>
+          <!-- USAGE -->
+          <div class="term-pane clickable" id="tp-usage" onclick="openReasoning('usage')">
+            <div class="term-header">
+              <div class="term-agent">
+                <div class="term-dot" id="td-usage"></div>
+                <span style="color:var(--text)">USAGE</span>
+                <span style="color:var(--dim);font-size:8px;letter-spacing:0.06em">VALIDATOR</span>
+              </div>
+              <div class="term-state" id="ts-usage">IDLE</div>
+            </div>
+            <div class="conf-bar-wrap" id="cb-usage">
+              <div class="conf-label"><span>CONFIDENCE</span><span id="cv-usage">0%</span></div>
+              <div class="conf-track"><div class="conf-fill" id="cf-usage"></div></div>
+            </div>
+            <div class="term-body" id="tb-usage"></div>
+            <div class="term-output" id="to-usage">—</div>
+          </div>
+          <!-- BILLING -->
+          <div class="term-pane clickable" id="tp-billing" onclick="openReasoning('billing')">
+            <div class="term-header">
+              <div class="term-agent">
+                <div class="term-dot" id="td-billing"></div>
+                <span style="color:var(--text)">BILLING</span>
+                <span style="color:var(--dim);font-size:8px;letter-spacing:0.06em">AUDITOR</span>
+              </div>
+              <div class="term-state" id="ts-billing">IDLE</div>
+            </div>
+            <div class="conf-bar-wrap" id="cb-billing">
+              <div class="conf-label"><span>CONFIDENCE</span><span id="cv-billing">0%</span></div>
+              <div class="conf-track"><div class="conf-fill" id="cf-billing"></div></div>
+            </div>
+            <div class="term-body" id="tb-billing"></div>
+            <div class="term-output" id="to-billing">—</div>
+          </div>
+          <!-- ORCHESTRATOR -->
+          <div class="term-pane clickable" id="tp-orch" onclick="openReasoning('orch')">
+            <div class="term-header">
+              <div class="term-agent">
+                <div class="term-dot" id="td-orch"></div>
+                <span style="color:var(--text)">ORCHESTRATOR</span>
+              </div>
+              <div class="term-state" id="ts-orch">IDLE</div>
+            </div>
+            <div class="conf-bar-wrap" id="cb-orch">
+              <div class="conf-label"><span>CONFIDENCE</span><span id="cv-orch">0%</span></div>
+              <div class="conf-track"><div class="conf-fill" id="cf-orch"></div></div>
+            </div>
+            <div class="term-body" id="tb-orch"></div>
+            <div class="term-output" id="to-orch">—</div>
+          </div>
+        </div>
+        <!-- Resize handle -->
+        <div class="resize-handle resize-handle-left" id="resizeLeft" onmousedown="startResize(event,'left')"></div>
+      </div>
+
+      <!-- CENTER: Graph -->
+      <div class="panel panel-center">
+        <div class="graph-area" id="graphArea">
+          <div class="corner tl"></div><div class="corner tr"></div>
+          <div class="corner bl"></div><div class="corner br"></div>
+
+          <svg id="graph-svg" xmlns="http://www.w3.org/2000/svg"></svg>
+          
+          <!-- Nodes -->
+          <div class="node-label" id="node-contract" style="left:50%;top:20%">
+            <div class="node-ring"><div class="node-emoji">📋</div><div class="node-id">CONTRACT</div></div>
+            <div class="node-model" id="nm-contract"></div>
+            <div class="node-val" id="nv-contract"></div>
+          </div>
+          <div class="node-label" id="node-usage" style="left:27%;top:54%">
+            <div class="node-ring"><div class="node-emoji">📊</div><div class="node-id">USAGE</div></div>
+            <div class="node-model" id="nm-usage"></div>
+            <div class="node-val" id="nv-usage"></div>
+          </div>
+          <div class="node-label" id="node-billing" style="left:73%;top:54%">
+            <div class="node-ring"><div class="node-emoji">💳</div><div class="node-id">BILLING</div></div>
+            <div class="node-model" id="nm-billing"></div>
+            <div class="node-val" id="nv-billing"></div>
+          </div>
+          <div class="node-label" id="node-orch" style="left:50%;top:81%">
+            <div class="node-ring" style="width:92px;height:92px">
+              <div class="node-emoji" style="font-size:28px">🎯</div>
+              <div class="node-id">ORCHESTRATOR</div>
+            </div>
+            <div class="node-model" id="nm-orch"></div>
+            <div class="node-val" id="nv-orch"></div>
+          </div>
+
+          <!-- Model context menu -->
+          <div class="model-ctx" id="modelCtx"></div>
+
+          <!-- Leakage overlay -->
+          <div id="leakage-overlay">
+            <div class="leakage-pre">REVENUE LEAKAGE IDENTIFIED</div>
+            <div class="leakage-num" id="leakageNum">$0.00</div>
+            <div class="leakage-post" id="leakageSub">840 OVERAGE UNITS × $0.05 × 1,000</div>
+          </div>
+
+          <div id="recovery-flash"></div>
+
+          <!-- Reasoning panel (graph overlay) -->
+          <div class="reasoning-panel" id="reasoningPanel">
+            <div class="rp-header">
+              <div class="rp-title" id="rp-title">AGENT REASONING TRACE</div>
+              <div class="rp-close" onclick="closeReasoning()">✕</div>
+            </div>
+            <div class="rp-body" id="rp-body"></div>
+          </div>
+
+          <div class="nav-hint" id="navHint">SPACE / CLICK TO ADVANCE</div>
+          <div id="step-nav">
+            <div class="step-dot" id="sd0"></div>
+            <div class="step-dot" id="sd1"></div>
+            <div class="step-dot" id="sd2"></div>
+            <div class="step-dot" id="sd3"></div>
+            <div class="step-dot" id="sd4"></div>
+            <div class="step-dot" id="sd5"></div>
+          </div>
+
+          <div id="idle-overlay">
+            <div class="idle-hex">ARIA</div>
+            <div class="idle-msg">4 agents standing by</div>
+            <div class="idle-key">
+              <span style="color:var(--mid);font-size:9px;letter-spacing:0.08em">CLICK NODES TO SELECT MODELS</span>
+            </div>
+            <div class="idle-key" style="margin-top:6px">
+              <span class="key-badge">SPACE</span>
+              <span style="color:var(--dim)">or</span>
+              <span class="key-badge">▶ BEGIN</span>
+              <span style="color:var(--dim)">to deploy</span>
+            </div>
+          </div>
+
+        </div><!-- /graph-area -->
+      </div><!-- /panel-center -->
+
+      <!-- RIGHT PANEL: Dock (resizable) -->
+      <div class="panel panel-right" id="panelRight">
+        <div class="resize-handle resize-handle-right" id="resizeRight" onmousedown="startResize(event,'right')"></div>
+        <div class="dock">
+          <!-- Recovery Email -->
+          <div class="dock-section">
+            <div class="dock-header">
+              RECOVERY EMAIL <div class="dock-tag locked" id="tag-email">LOCKED</div>
+            </div>
+            <div class="dock-body" id="db-email">
+              <div style="color:var(--rule2)">Awaiting leakage analysis...</div>
+            </div>
+          </div>
+
+          <!-- Billing Payload -->
+          <div class="dock-section">
+            <div class="dock-header">
+              BILLING PAYLOAD <div class="dock-tag locked" id="tag-json">LOCKED</div>
+            </div>
+            <div class="dock-body" id="db-json">
+              <div style="color:var(--rule2)">Awaiting orchestrator...</div>
+            </div>
+          </div>
+
+          <!-- Ranked Actions -->
+          <div class="dock-section grow">
+            <div class="dock-header">
+              RANKED ACTIONS <div class="dock-tag locked" id="tag-actions">PENDING</div>
+            </div>
+            <div class="dock-body" id="db-actions">
+              <div class="field"><span class="field-key">INV</span><span class="field-val" style="color:var(--rule2)">—</span></div>
+              <div class="field"><span class="field-key">CRM</span><span class="field-val" style="color:var(--rule2)">—</span></div>
+              <div class="field"><span class="field-key">SLACK</span><span class="field-val" style="color:var(--rule2)">—</span></div>
+              <div class="field"><span class="field-key">STATUS</span><span class="field-val" style="color:var(--rule2)">QUEUED</span></div>
+            </div>
+            <!-- Report -->
+            <div class="report-block" id="reportBlock">
+              <div class="report-title">AUTO-GENERATED REPORT</div>
+              <div class="report-row"><span class="report-key">CASE</span><span class="report-val">ACME-ENT-90210</span></div>
+              <div class="report-row"><span class="report-key">ISSUES</span><span class="report-val">3 discrepancies</span></div>
+              <div class="report-row"><span class="report-key">RECOVERY</span><span class="report-val cool">$21,250</span></div>
+              <div class="report-row"><span class="report-key">TOP ACTION</span><span class="report-val">Issue INV-2024-889</span></div>
+              <div class="report-row"><span class="report-key">CONFIDENCE</span><span class="report-val">91.7% avg</span></div>
+              <button class="report-btn" onclick="exportReport()">↓ EXPORT REPORT (PDF)</button>
+            </div>
+            <!-- Feedback -->
+            <div class="feedback-bar" id="feedbackBar">
+              <span>WAS THIS CORRECT?</span>
+              <button class="fb-btn" onclick="giveFeedback(true)">✓ YES</button>
+              <button class="fb-btn hot" onclick="giveFeedback(false)">✗ NO</button>
+              <span class="fb-result" id="fb-result"></span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /detailView -->
+
+  </div>
+
+  <!-- ── STATUS BAR ── -->
+  <div class="statusbar">
+    <span class="sb-item" id="sb-case">CASE —</span>
+    <span class="sb-sep">|</span>
+    <span class="sb-item" id="sb-agents">AGENTS 0/4</span>
+    <span class="sb-sep">|</span>
+    <span class="sb-item" id="sb-ev">EVIDENCE 0/3</span>
+    <span class="sb-sep">|</span>
+    <span class="sb-item" id="sb-leak">LEAKAGE —</span>
+    <span class="sb-sep">|</span>
+    <span class="sb-item" id="sb-score">SCORE —</span>
+    <div class="sb-spacer"></div>
+    <div style="overflow:hidden;max-width:420px;">
+      <div id="sb-ticker">
+        <span style="color:var(--dim)">ACME-ENT-90210 · NEXUS-CORP-40120 · TITAN-SAAS-77450 · MULTI-ACCOUNT ANALYSIS · ARIA v2.1 · MULTI-AGENT RECOVERY ·&nbsp;</span>
+        <span style="color:var(--dim)">ACME-ENT-90210 · NEXUS-CORP-40120 · TITAN-SAAS-77450 · MULTI-ACCOUNT ANALYSIS · ARIA v2.1 · MULTI-AGENT RECOVERY ·&nbsp;</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Tooltip -->
+<div class="tooltip" id="tooltip"></div>
+
+<script type="module" src="/js/main.js"></script>
+</body>
+</html>

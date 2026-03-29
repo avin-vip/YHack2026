@@ -3,23 +3,443 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ARIA — Revenue Recovery Operations</title>
+<title>KUBO — Autonomous Revenue Recovery Agent</title>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600;700&family=Bebas+Neue&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/css/styles.css">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --ink:    #080810;
+  --ink2:   #0e0e18;
+  --ink3:   #13131f;
+  --ink4:   #1a1a28;
+  --rule:   #22222e;
+  --rule2:  #2c2c3a;
+  --dim:    #3e3e52;
+  --mid:    #6a6a85;
+  --text:   #b8b8cc;
+  --bright: #dcdcee;
+  --white:  #efeffa;
+
+  --acid:      #c8f040;
+  --acid-dim:  rgba(200,240,64,0.10);
+  --acid-glow: rgba(200,240,64,0.28);
+
+  --hot:      #e84040;
+  --cool:     #3ecfaa;
+  --cool-dim: rgba(62,207,170,0.10);
+  --amber:    #d9870f;
+  --blue:     #5b8dee;
+  --blue-dim: rgba(91,141,238,0.10);
+
+  --mono:    'IBM Plex Mono', monospace;
+  --sans:    'IBM Plex Sans', sans-serif;
+  --display: 'Bebas Neue', sans-serif;
+}
+
+html, body { height: 100%; overflow-x: hidden; }
+
+body {
+  font-family: var(--sans);
+  background: var(--ink);
+  color: var(--text);
+  position: relative;
+}
+
+/* ── DOT GRID ── */
+body::before {
+  content: '';
+  position: fixed; inset: 0;
+  background-image: radial-gradient(circle at 1px 1px, rgba(255,255,255,0.055) 1px, transparent 0);
+  background-size: 32px 32px;
+  pointer-events: none; z-index: 0;
+}
+
+/* ── GRAIN ── */
+body::after {
+  content: '';
+  position: fixed; inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");
+  pointer-events: none; z-index: 9999; opacity: 0.5;
+}
+
+/* ── LAYOUT ── */
+.page { position: relative; z-index: 1; }
+
+/* ── NAV ── */
+nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 40px; height: 52px;
+  background: rgba(8,8,16,0.88);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--rule);
+}
+.nav-brand {
+  display: flex; align-items: center; gap: 12px;
+  text-decoration: none;
+}
+.nav-sigil {
+  flex-shrink: 0;
+  filter: drop-shadow(0 0 7px var(--acid-glow));
+}
+.nav-name {
+  font-family: var(--mono);
+  font-size: 15px; font-weight: 700; letter-spacing: 0.22em;
+  color: var(--white); line-height: 1;
+}
+.nav-sub { font-family: var(--mono); font-size: 8px; color: var(--dim); letter-spacing: 0.16em; margin-top: 3px; }
+.nav-cta {
+  font-family: var(--mono); font-size: 10px; font-weight: 600; letter-spacing: 0.1em;
+  color: var(--ink); background: var(--acid);
+  border: none; padding: 8px 20px; cursor: pointer;
+  transition: opacity 0.2s;
+  text-decoration: none; display: inline-block;
+}
+.nav-cta:hover { opacity: 0.85; }
+
+/* ── ENTROPY BACKGROUND ── */
+#entropyCanvas {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0.55;
+}
+/* Vignette — fades edges so content stays readable */
+.entropy-vignette {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background: radial-gradient(ellipse at 50% 40%,
+    transparent 20%,
+    rgba(8,8,16,0.55) 60%,
+    rgba(8,8,16,0.92) 100%);
+}
+
+/* ── HERO ── */
+.hero {
+  min-height: 100vh;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  text-align: center;
+  padding: 100px 40px 80px;
+  position: relative; z-index: 2;
+}
+.hero-eyebrow {
+  font-family: var(--mono); font-size: 10px; font-weight: 600; letter-spacing: 0.2em;
+  color: var(--acid); margin-bottom: 20px;
+  display: flex; align-items: center; gap: 10px;
+}
+.hero-eyebrow::before, .hero-eyebrow::after {
+  content: ''; display: block;
+  width: 32px; height: 1px; background: var(--acid); opacity: 0.45;
+}
+.hero-title {
+  font-family: var(--display);
+  font-size: clamp(56px, 8vw, 100px);
+  letter-spacing: 0.06em;
+  color: var(--white);
+  line-height: 0.93;
+  margin-bottom: 20px;
+  text-shadow: 0 0 60px rgba(8,8,16,0.8);
+}
+.hero-title span { color: var(--acid); }
+.hero-subtitle {
+  font-size: clamp(15px, 1.8vw, 19px);
+  color: var(--mid);
+  font-weight: 300;
+  max-width: 560px;
+  line-height: 1.75;
+  margin-bottom: 40px;
+}
+.hero-subtitle strong { color: var(--text); font-weight: 500; }
+.hero-actions { display: flex; gap: 14px; flex-wrap: wrap; justify-content: center; margin-bottom: 0; }
+.btn-primary {
+  font-family: var(--mono); font-size: 11px; font-weight: 700; letter-spacing: 0.14em;
+  color: var(--ink); background: var(--acid);
+  border: none; padding: 14px 36px; cursor: pointer;
+  transition: opacity 0.2s, transform 0.15s;
+  text-decoration: none; display: inline-flex; align-items: center; gap: 8px;
+}
+.btn-primary:hover { opacity: 0.88; transform: translateY(-1px); }
+.btn-secondary {
+  font-family: var(--mono); font-size: 11px; font-weight: 600; letter-spacing: 0.12em;
+  color: var(--text); background: transparent;
+  border: 1px solid var(--rule2); padding: 14px 28px; cursor: pointer;
+  transition: border-color 0.2s, color 0.2s;
+  text-decoration: none; display: inline-flex; align-items: center; gap: 8px;
+}
+.btn-secondary:hover { border-color: var(--mid); color: var(--bright); }
+
+/* Hero stat strip */
+.hero-bottom {
+  max-width: 900px; margin: 52px auto 0; width: 100%;
+  display: flex; flex-direction: column; gap: 16px;
+}
+.hero-stats {
+  display: flex; gap: 0;
+  border: 1px solid var(--rule);
+  overflow: hidden;
+  background: rgba(8,8,16,0.72);
+  backdrop-filter: blur(6px);
+}
+.hero-stat {
+  flex: 1; padding: 16px 20px;
+  border-right: 1px solid var(--rule);
+  text-align: center;
+}
+.hero-stat:last-child { border-right: none; }
+.hero-stat-val {
+  font-family: var(--mono); font-size: 20px; font-weight: 600;
+  color: var(--acid); line-height: 1;
+  margin-bottom: 5px;
+}
+.hero-stat-lbl {
+  font-size: 10px; color: var(--text);
+  letter-spacing: 0.02em; font-weight: 500;
+  margin-bottom: 4px;
+}
+.hero-stat-sub {
+  font-size: 10px; color: var(--mid);
+  line-height: 1.5;
+}
+
+/* ── SECTION SHARED ── */
+section { padding: 88px 40px; position: relative; z-index: 2; }
+section + section { border-top: 1px solid var(--rule); }
+.section-inner { max-width: 1100px; margin: 0 auto; }
+.section-tag {
+  font-family: var(--mono); font-size: 10px; font-weight: 600; letter-spacing: 0.2em;
+  color: var(--acid); margin-bottom: 14px; text-transform: uppercase;
+}
+.section-title {
+  font-size: clamp(28px, 4vw, 42px); font-weight: 600;
+  color: var(--white); line-height: 1.2; margin-bottom: 16px;
+}
+.section-desc {
+  font-size: 16px; color: var(--mid); font-weight: 300;
+  line-height: 1.75; max-width: 560px;
+}
+
+/* ── HOW IT WORKS ── */
+.steps { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0; margin-top: 52px; border: 1px solid var(--rule); }
+.step {
+  padding: 28px 24px;
+  border-right: 1px solid var(--rule);
+  position: relative;
+}
+.step:last-child { border-right: none; }
+.step-num {
+  font-family: var(--mono); font-size: 10px; font-weight: 700; letter-spacing: 0.12em;
+  color: var(--dim); margin-bottom: 16px;
+}
+.step-icon {
+  width: 36px; height: 36px; margin-bottom: 16px;
+  display: flex; align-items: center; justify-content: center;
+  border: 1px solid var(--rule2);
+  color: var(--acid);
+}
+.step-icon svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+.step-title { font-size: 15px; font-weight: 600; color: var(--bright); margin-bottom: 8px; }
+.step-desc  { font-size: 13px; color: var(--mid); line-height: 1.65; }
+.step-connector {
+  position: absolute; top: 38px; right: -1px;
+  width: 12px; height: 12px;
+  background: var(--acid); opacity: 0;
+}
+.step:not(:last-child) .step-connector { opacity: 1; }
+
+/* ── AGENTS ── */
+.agents-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-top: 48px; }
+.agent-card {
+  border: 1px solid var(--rule);
+  background: var(--ink2);
+  padding: 24px 26px;
+  position: relative; overflow: hidden;
+  transition: border-color 0.25s;
+}
+.agent-card:hover { border-color: var(--rule2); }
+.agent-card::before {
+  content: '';
+  position: absolute; top: 0; left: 0; right: 0; height: 2px;
+}
+.agent-card.c-agent::before  { background: var(--blue); }
+.agent-card.u-agent::before  { background: var(--cool); }
+.agent-card.b-agent::before  { background: var(--amber); }
+.agent-card.o-agent::before  { background: var(--acid); }
+.agent-badge {
+  font-family: var(--mono); font-size: 11px; font-weight: 700;
+  letter-spacing: 0.1em; margin-bottom: 14px;
+  display: flex; align-items: center; gap: 10px;
+}
+.agent-badge-pill {
+  width: 30px; height: 30px;
+  display: flex; align-items: center; justify-content: center;
+  border: 1.5px solid currentColor; flex-shrink: 0;
+}
+.agent-badge-pill svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+.agent-card.c-agent .agent-badge { color: var(--blue); }
+.agent-card.u-agent .agent-badge { color: var(--cool); }
+.agent-card.b-agent .agent-badge { color: var(--amber); }
+.agent-card.o-agent .agent-badge { color: var(--acid); }
+.agent-name  { font-size: 16px; font-weight: 600; color: var(--white); margin-bottom: 8px; }
+.agent-desc  { font-size: 13px; color: var(--mid); line-height: 1.7; margin-bottom: 16px; }
+.agent-tags  { display: flex; flex-wrap: wrap; gap: 6px; }
+.agent-tag {
+  font-family: var(--mono); font-size: 9px; font-weight: 600; letter-spacing: 0.08em;
+  color: var(--dim); border: 1px solid var(--rule2); padding: 3px 8px;
+}
+
+/* ── LEAKAGE TYPES ── */
+.leak-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 48px; }
+.leak-card {
+  border: 1px solid var(--rule); padding: 24px;
+  background: var(--ink2);
+}
+.leak-icon { font-size: 22px; margin-bottom: 12px; }
+.leak-title { font-size: 15px; font-weight: 600; color: var(--bright); margin-bottom: 8px; }
+.leak-desc  { font-size: 13px; color: var(--mid); line-height: 1.65; }
+.leak-tag {
+  display: inline-block; margin-top: 12px;
+  font-family: var(--mono); font-size: 9px; font-weight: 600; letter-spacing: 0.08em;
+  color: var(--hot); border: 1px solid rgba(232,64,64,0.25); padding: 3px 8px;
+  background: var(--hot-dim);
+}
+
+/* ── CTA SECTION ── */
+.cta-section {
+  padding: 100px 40px;
+  text-align: center;
+  background: linear-gradient(180deg, transparent 0%, rgba(200,240,64,0.03) 100%);
+}
+.cta-section .section-inner { display: flex; flex-direction: column; align-items: center; }
+.cta-title {
+  font-family: var(--display);
+  font-size: clamp(36px, 5vw, 60px);
+  letter-spacing: 0.06em;
+  color: var(--white); line-height: 1.05;
+  margin-bottom: 16px;
+}
+.cta-title span { color: var(--acid); }
+.cta-desc {
+  font-size: 16px; color: var(--mid); font-weight: 300;
+  line-height: 1.7; max-width: 480px; margin-bottom: 40px;
+}
+.cta-note {
+  margin-top: 18px;
+  font-family: var(--mono); font-size: 10px; color: var(--dim); letter-spacing: 0.06em;
+}
+
+/* ── FOOTER ── */
+footer {
+  padding: 24px 40px;
+  border-top: 1px solid var(--rule);
+  display: flex; align-items: center; justify-content: space-between;
+  font-family: var(--mono); font-size: 9px; color: var(--dim); letter-spacing: 0.08em;
+}
+.footer-brand { display: flex; align-items: center; gap: 10px; color: var(--mid); }
+.footer-sigil {
+  width: 16px; height: 16px;
+  background: var(--dim);
+  clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+}
+
+/* ── TERMINAL PREVIEW STRIP ── */
+.terminal-strip {
+  border: 1px solid var(--rule);
+  background: rgba(14,14,24,0.82);
+  backdrop-filter: blur(8px);
+  font-family: var(--mono);
+  font-size: 11px;
+  overflow: hidden;
+}
+.terminal-bar {
+  background: var(--rule);
+  padding: 7px 14px;
+  display: flex; align-items: center; gap: 6px;
+  font-size: 9px; color: var(--dim); letter-spacing: 0.08em;
+}
+.terminal-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+}
+.terminal-body { padding: 20px 24px; display: flex; flex-direction: column; gap: 6px; }
+.tl { display: flex; gap: 12px; }
+.tl-ts { color: var(--dim); min-width: 64px; flex-shrink: 0; }
+.tl-msg.dim  { color: var(--dim); }
+.tl-msg.ok   { color: var(--cool); }
+.tl-msg.hot  { color: var(--hot); }
+.tl-msg.acid { color: var(--acid); }
+.tl-msg.warn { color: var(--amber); }
+
+/* ── ANIMATIONS ── */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(18px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.hero-eyebrow { animation: fadeUp 0.5s ease both; }
+.hero-title   { animation: fadeUp 0.55s ease 0.08s both; }
+.hero-subtitle{ animation: fadeUp 0.55s ease 0.16s both; }
+.hero-actions { animation: fadeUp 0.55s ease 0.24s both; }
+.hero-stats   { animation: fadeUp 0.55s ease 0.32s both; }
+
+@media (max-width: 768px) {
+  nav { padding: 0 20px; }
+  .hero { padding: 88px 24px 56px; }
+  section { padding: 64px 24px; }
+  .steps { grid-template-columns: 1fr; }
+  .step { border-right: none; border-bottom: 1px solid var(--rule); }
+  .step:last-child { border-bottom: none; }
+  .agents-grid { grid-template-columns: 1fr; }
+  .leak-grid { grid-template-columns: 1fr; }
+  .hero-stats { flex-wrap: wrap; }
+  .hero-stat { flex: 1 1 40%; border-right: 1px solid var(--rule); border-bottom: 1px solid var(--rule); }
+  footer { flex-direction: column; gap: 8px; text-align: center; }
+}
+</style>
 </head>
 <body>
+<div class="page">
 
-<div class="shell">
-  <!-- ── HEADER ── -->
-  <header>
-    <div class="hd-brand">
-      <div class="hd-sigil"></div>
+  <!-- ── NAV ── -->
+  <nav>
+    <a class="nav-brand" href="#">
+      <!-- Logo mark: diamond outline with filled circles at each corner -->
+      <svg class="nav-sigil" width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <polygon points="14,3 25,14 14,25 3,14" stroke="#c8f040" stroke-width="1.4"/>
+        <circle cx="14" cy="3"  r="2.2" fill="#c8f040"/>
+        <circle cx="25" cy="14" r="2.2" fill="#c8f040"/>
+        <circle cx="14" cy="25" r="2.2" fill="#c8f040"/>
+        <circle cx="3"  cy="14" r="2.2" fill="#c8f040"/>
+      </svg>
       <div>
-        <div class="hd-name">ARIA</div>
-        <div class="hd-sub">REVENUE RECOVERY OPS</div>
+        <div class="nav-name">KUBO</div>
+        <div class="nav-sub">REVENUE RECOVERY OPS</div>
       </div>
+    </a>
+    <a class="nav-cta" href="demo.html">LAUNCH DEMO →</a>
+  </nav>
+
+  <!-- ── ENTROPY BACKGROUND ── -->
+  <canvas id="entropyCanvas"></canvas>
+  <div class="entropy-vignette"></div>
+
+  <!-- ── HERO ── -->
+  <section class="hero">
+    <div class="hero-eyebrow">AUTONOMOUS REVENUE RECOVERY AGENT</div>
+    <h1 class="hero-title">YOUR AUTONOMOUS<br>REVENUE <span>RECOVERY</span> AGENTS</h1>
+    <p class="hero-subtitle">
+      KUBO audits <strong>contracts</strong>, <strong>usage records</strong>, and <strong>invoices</strong>
+      to detect revenue leakage and generate recovery actions in seconds.
+    </p>
+    <div class="hero-actions">
+      <a class="btn-primary" href="demo.html">▶ LAUNCH LIVE DEMO</a>
+      <a class="btn-secondary" href="#how-it-works">HOW IT WORKS ↓</a>
     </div>
 
+<<<<<<< Updated upstream
     <div class="hd-meta">
       <span class="val">ACME-ENT-90210</span>
       <div class="hd-sep"></div>
@@ -211,10 +631,35 @@
             <span class="key-badge">▶ BEGIN</span>
             <span style="color:var(--dim)">to deploy</span>
           </div>
+=======
+    <!-- Bottom: stats + terminal -->
+    <div class="hero-bottom">
+      <div class="hero-stats">
+        <div class="hero-stat">
+          <div class="hero-stat-val">4</div>
+          <div class="hero-stat-lbl">Specialized agents</div>
+          <div class="hero-stat-sub">contract, usage, invoice, recovery</div>
+        </div>
+        <div class="hero-stat">
+          <div class="hero-stat-val">&lt;10s</div>
+          <div class="hero-stat-lbl">Average runtime</div>
+          <div class="hero-stat-sub">per demo case</div>
+        </div>
+        <div class="hero-stat">
+          <div class="hero-stat-val">91.7%</div>
+          <div class="hero-stat-lbl">Cross-agent confidence</div>
+          <div class="hero-stat-sub">on flagged discrepancy</div>
+        </div>
+        <div class="hero-stat">
+          <div class="hero-stat-val">$21K+</div>
+          <div class="hero-stat-lbl">Revenue leakage identified</div>
+          <div class="hero-stat-sub">in sample audit</div>
+>>>>>>> Stashed changes
         </div>
       </div>
     </div>
 
+<<<<<<< Updated upstream
     <!-- RIGHT PANEL: Dock (resizable) -->
     <div class="panel panel-right" id="panelRight">
       <div class="resize-handle resize-handle-right" id="resizeRight" onmousedown="startResize(event,'right')"></div>
@@ -289,14 +734,323 @@
       <div id="sb-ticker">
         <span style="color:var(--dim)">ACME-ENT-90210 · CTR-12345 · INV-2024-456 · ENTERPRISE PLUS TIER · LIMIT 10,000 UNITS/MO · ARIA v2.1 · MULTI-AGENT RECOVERY ·&nbsp;</span>
         <span style="color:var(--dim)">ACME-ENT-90210 · CTR-12345 · INV-2024-456 · ENTERPRISE PLUS TIER · LIMIT 10,000 UNITS/MO · ARIA v2.1 · MULTI-AGENT RECOVERY ·&nbsp;</span>
+=======
+      <div class="terminal-strip">
+        <div class="terminal-bar">
+          <div class="terminal-dot" style="background:#e84040"></div>
+          <div class="terminal-dot" style="background:#d9870f"></div>
+          <div class="terminal-dot" style="background:#3ecfaa"></div>
+          <span style="margin-left:8px">KUBO — BILLING AUDITOR</span>
+          <span style="margin-left:auto;color:#3ecfaa">● COMPLETE</span>
+        </div>
+        <div class="terminal-body">
+          <div class="tl"><span class="tl-ts">02:14:01</span><span class="tl-msg dim">Loading invoice INV-2024-889...</span></div>
+          <div class="tl"><span class="tl-ts">02:14:02</span><span class="tl-msg ok">Base charge parsed: $63,750</span></div>
+          <div class="tl"><span class="tl-ts">02:14:02</span><span class="tl-msg hot">⚠ Overage line item: $0.00 — should be $21,250</span></div>
+          <div class="tl"><span class="tl-ts">02:14:03</span><span class="tl-msg warn">Discount misapplied to overage charges (§12.3 scope violation)</span></div>
+          <div class="tl"><span class="tl-ts">02:14:03</span><span class="tl-msg acid">NET LEAKAGE CONFIRMED: $21,250 · confidence 89%</span></div>
+        </div>
+>>>>>>> Stashed changes
       </div>
     </div>
-  </div>
+  </section>
+
+  <!-- ── HOW IT WORKS ── -->
+  <section id="how-it-works">
+    <div class="section-inner">
+      <div class="section-tag">How it works</div>
+      <h2 class="section-title">From raw contract to recovery<br>in four automated steps</h2>
+      <p class="section-desc">No manual auditing. No spreadsheets. KUBO runs a 4-agent pipeline that cross-references your contract, usage data, and invoices in one pass.</p>
+
+      <div class="steps">
+        <div class="step">
+          <div class="step-num">STEP 01</div>
+          <div class="step-icon"><!-- document / contract -->
+            <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><line x1="10" y1="9" x2="8" y2="9"/></svg>
+          </div>
+          <div class="step-title">Parse Contract</div>
+          <div class="step-desc">The Contract Analyst reads your PDF agreement and extracts pricing terms, overage rates, discount scope, and billing rules.</div>
+          <div class="step-connector"></div>
+        </div>
+        <div class="step">
+          <div class="step-num">STEP 02</div>
+          <div class="step-icon"><!-- activity / usage -->
+            <svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+          </div>
+          <div class="step-title">Validate Usage</div>
+          <div class="step-desc">The Usage Validator ingests your raw API or metered usage logs, deduplicates retries, and calculates true consumption vs. contract limits.</div>
+          <div class="step-connector"></div>
+        </div>
+        <div class="step">
+          <div class="step-num">STEP 03</div>
+          <div class="step-icon"><!-- search / audit -->
+            <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
+          </div>
+          <div class="step-title">Audit Billing</div>
+          <div class="step-desc">The Billing Auditor compares each invoice line item against contract terms — catching missing overages, wrong rates, and misapplied discounts.</div>
+          <div class="step-connector"></div>
+        </div>
+        <div class="step">
+          <div class="step-num">STEP 04</div>
+          <div class="step-icon"><!-- zap / orchestrate -->
+            <svg viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+          </div>
+          <div class="step-title">Orchestrate Recovery</div>
+          <div class="step-desc">The Orchestrator aggregates all findings, ranks recovery actions by expected utility, and generates a corrective invoice and email draft — ready to send.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── AGENTS ── -->
+  <section id="agents">
+    <div class="section-inner">
+      <div class="section-tag">The agent pipeline</div>
+      <h2 class="section-title">Four specialized agents.<br>One unified answer.</h2>
+      <p class="section-desc">Each agent is an expert in its domain. Together they form a Bayesian evidence chain that's more reliable than any single model call.</p>
+
+      <div class="agents-grid">
+        <div class="agent-card c-agent">
+          <div class="agent-badge">
+            <div class="agent-badge-pill"><!-- document -->
+              <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+            </div>
+            CONTRACT ANALYST
+          </div>
+          <div class="agent-name">Reads your contract so you don't have to</div>
+          <div class="agent-desc">Parses the executed PDF to extract base fees, usage caps, overage rate schedules, discount scope clauses, and payment terms. Flags ambiguous language that could produce conflicting billing interpretations.</div>
+          <div class="agent-tags">
+            <span class="agent-tag">PDF PARSING</span>
+            <span class="agent-tag">CLAUSE EXTRACTION</span>
+            <span class="agent-tag">PRICING MODEL</span>
+          </div>
+        </div>
+
+        <div class="agent-card u-agent">
+          <div class="agent-badge">
+            <div class="agent-badge-pill"><!-- activity -->
+              <svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+            </div>
+            USAGE VALIDATOR
+          </div>
+          <div class="agent-name">Finds the units you were never billed for</div>
+          <div class="agent-desc">Ingests raw API logs or metered usage data, deduplicates retry calls, and aggregates consumption by billing period. Computes true overage units using your contract's unit multiplier.</div>
+          <div class="agent-tags">
+            <span class="agent-tag">LOG ANALYSIS</span>
+            <span class="agent-tag">DEDUPLICATION</span>
+            <span class="agent-tag">OVERAGE CALC</span>
+          </div>
+        </div>
+
+        <div class="agent-card b-agent">
+          <div class="agent-badge">
+            <div class="agent-badge-pill"><!-- receipt / invoice -->
+              <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
+            </div>
+            BILLING AUDITOR
+          </div>
+          <div class="agent-name">Spots every dollar difference on your invoice</div>
+          <div class="agent-desc">Cross-references each invoice line item against your contract's pricing rules. Catches missing overage lines, wrong rate application, and discount scope errors — and quantifies the dollar impact of each.</div>
+          <div class="agent-tags">
+            <span class="agent-tag">LINE ITEM AUDIT</span>
+            <span class="agent-tag">DISCOUNT CHECK</span>
+            <span class="agent-tag">RATE VALIDATION</span>
+          </div>
+        </div>
+
+        <div class="agent-card o-agent">
+          <div class="agent-badge">
+            <div class="agent-badge-pill"><!-- cpu / orchestrator -->
+              <svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/><line x1="9" y1="1" x2="9" y2="4"/><line x1="15" y1="1" x2="15" y2="4"/><line x1="9" y1="20" x2="9" y2="23"/><line x1="15" y1="20" x2="15" y2="23"/><line x1="20" y1="9" x2="23" y2="9"/><line x1="20" y1="14" x2="23" y2="14"/><line x1="1" y1="9" x2="4" y2="9"/><line x1="1" y1="14" x2="4" y2="14"/></svg>
+            </div>
+            ORCHESTRATOR
+          </div>
+          <div class="agent-name">Ranks your recovery options by expected value</div>
+          <div class="agent-desc">Aggregates all three agent outputs using Bayesian confidence weighting. Scores each recovery action by Expected Utility, then generates a corrective invoice payload and a ready-to-send email draft.</div>
+          <div class="agent-tags">
+            <span class="agent-tag">EU SCORING</span>
+            <span class="agent-tag">EMAIL DRAFT</span>
+            <span class="agent-tag">INVOICE GEN</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── LEAKAGE TYPES ── -->
+  <section>
+    <div class="section-inner">
+      <div class="section-tag">What KUBO catches</div>
+      <h2 class="section-title">The three most common<br>sources of revenue leakage</h2>
+      <p class="section-desc">Most enterprise billing errors fall into predictable patterns. KUBO is trained to detect all of them automatically.</p>
+
+      <div class="leak-grid">
+        <div class="leak-card">
+          <div class="leak-icon">📋</div>
+          <div class="leak-title">Missed Overages</div>
+          <div class="leak-desc">Usage exceeded contract limits but no overage line item appeared on the invoice. Common when billing systems don't read usage logs in real time.</div>
+          <span class="leak-tag">UNBILLED UNITS</span>
+        </div>
+        <div class="leak-card">
+          <div class="leak-icon">⚠️</div>
+          <div class="leak-title">Misapplied Discounts</div>
+          <div class="leak-desc">Discounts intended for base charges only were incorrectly applied to overage charges, reducing revenue beyond what the contract permits.</div>
+          <span class="leak-tag">DISCOUNT SCOPE ERROR</span>
+        </div>
+        <div class="leak-card">
+          <div class="leak-icon">💰</div>
+          <div class="leak-title">Wrong Rate Application</div>
+          <div class="leak-desc">The unit price used in the invoice doesn't match the contracted rate — often a stale rate from a previous billing period or pricing tier.</div>
+          <span class="leak-tag">RATE MISMATCH</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── CTA ── -->
+  <section class="cta-section">
+    <div class="section-inner">
+      <h2 class="cta-title">READY TO SEE<br><span>YOUR LEAKAGE?</span></h2>
+      <p class="cta-desc">Run the live demo against a real enterprise account. The full 4-agent pipeline executes in under 10 seconds.</p>
+      <a class="btn-primary" href="demo.html" style="font-size:13px;padding:16px 48px">▶ LAUNCH LIVE DEMO</a>
+      <p class="cta-note">No signup required · Demo data only · Runs locally</p>
+    </div>
+  </section>
+
+  <!-- ── FOOTER ── -->
+  <footer>
+    <div class="footer-brand">
+      <div class="footer-sigil"></div>
+      KUBO — AUTONOMOUS REVENUE RECOVERY AGENT
+    </div>
+    <div>YHack 2026 · Built with FastAPI + Vanilla JS</div>
+  </footer>
+
 </div>
+<script>
+(function () {
+  const canvas = document.getElementById('entropyCanvas');
+  if (!canvas) return;
 
-<!-- Tooltip -->
-<div class="tooltip" id="tooltip"></div>
+  let animationId;
 
-<script type="module" src="/js/main.js"></script>
+  function init() {
+    const W = window.innerWidth;
+    const H = window.innerHeight;
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width  = W * dpr;
+    canvas.height = H * dpr;
+
+    const ctx = canvas.getContext('2d');
+    ctx.scale(dpr, dpr);
+    if (animationId) cancelAnimationFrame(animationId);
+
+    // Particle count scales with screen area — cap for perf
+    const count = Math.min(160, Math.floor((W * H) / 8000));
+    const connRange = Math.min(W, H) * 0.18;
+    const pSize = Math.max(1.2, Math.min(W, H) / 420);
+
+    function Particle(i) {
+      this.x  = Math.random() * W;
+      this.y  = Math.random() * H;
+      this.vx = (Math.random() - 0.5) * 1.4;
+      this.vy = (Math.random() - 0.5) * 1.4;
+      this.driftX = (Math.random() - 0.5) * 0.008;
+      this.driftY = (Math.random() - 0.5) * 0.008;
+      // ~35% of particles are "nodes" — the only ones that draw lines
+      this.isNode = Math.random() < 0.35;
+      // Each node connects to at most 2 nearest neighbours
+      this.maxLinks = 1 + Math.floor(Math.random() * 2); // 1 or 2
+    }
+
+    Particle.prototype.update = function () {
+      // Brownian + slow drift
+      this.vx += (Math.random() - 0.5) * 0.3 + this.driftX;
+      this.vy += (Math.random() - 0.5) * 0.3 + this.driftY;
+      // Damping keeps velocity bounded
+      this.vx *= 0.96;
+      this.vy *= 0.96;
+      this.x  += this.vx;
+      this.y  += this.vy;
+      // Soft wrap — particles re-enter from opposite edge
+      if (this.x < -20)  this.x = W + 20;
+      if (this.x > W+20) this.x = -20;
+      if (this.y < -20)  this.y = H + 20;
+      if (this.y > H+20) this.y = -20;
+    };
+
+    const particles = Array.from({ length: count }, (_, i) => new Particle(i));
+
+    // Subtle accent colors pulled from KUBO palette
+    const colors = ['#ffffff', '#c8f040', '#3ecfaa', '#5b8dee'];
+
+    let time = 0;
+
+    function animate() {
+      ctx.clearRect(0, 0, W, H);
+
+      // Draw connections — only node particles, to their closest maxLinks neighbours
+      for (let i = 0; i < particles.length; i++) {
+        const p = particles[i];
+        if (!p.isNode) continue;
+
+        // Collect candidates within range, sorted by distance
+        const candidates = [];
+        for (let j = 0; j < particles.length; j++) {
+          if (j === i) continue;
+          const d = Math.hypot(p.x - particles[j].x, p.y - particles[j].y);
+          if (d < connRange) candidates.push({ q: particles[j], d });
+        }
+        candidates.sort((a, b) => a.d - b.d);
+
+        const links = candidates.slice(0, p.maxLinks);
+        links.forEach(({ q, d }) => {
+          const t = 1 - d / connRange;          // 0→1 as distance decreases
+          const alpha = 0.08 + 0.18 * t * t;    // subtle at far, slightly stronger at near
+          // Accent tint on node→node connections, plain white otherwise
+          const color = (p.isNode && q.isNode)
+            ? `rgba(200,240,64,${(alpha * 0.7).toFixed(3)})`   // acid faint tint
+            : `rgba(255,255,255,${alpha.toFixed(3)})`;
+          ctx.strokeStyle = color;
+          ctx.lineWidth = 0.4 + 0.4 * t;        // thicker when closer
+          ctx.beginPath();
+          ctx.moveTo(p.x, p.y);
+          ctx.lineTo(q.x, q.y);
+          ctx.stroke();
+        });
+      }
+
+      // Draw + update particles
+      particles.forEach((p, i) => {
+        p.update();
+        // Occasional accent-colored particle for visual interest
+        const color = (i % 18 === 0) ? colors[1]
+                    : (i % 23 === 0) ? colors[2]
+                    : (i % 31 === 0) ? colors[3]
+                    : colors[0];
+        const alpha = 0.55 + 0.3 * Math.sin(time * 0.015 + i);
+        ctx.globalAlpha = alpha;
+        ctx.fillStyle = color;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, pSize, 0, Math.PI * 2);
+        ctx.fill();
+      });
+
+      ctx.globalAlpha = 1;
+      time++;
+      animationId = requestAnimationFrame(animate);
+    }
+
+    animate();
+  }
+
+  init();
+  let resizeTimer;
+  window.addEventListener('resize', function () {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(init, 150);
+  });
+})();
+</script>
 </body>
 </html>
