@@ -1,5 +1,7 @@
 import json
 import os
+import re
+import asyncio
 from datetime import datetime, timezone
 from typing import Awaitable, Callable
 import inspect
@@ -12,6 +14,7 @@ from app.agents.billing import BillingAuditor
 from app.agents.orchestrator import Orchestrator
 from app.services.run_logger import RunLogger
 from app.services.recovery import generate_recovery_package
+from app.services.slack import send_leakage_alert
 
 DATA_DIR = Path(__file__).parent.parent.parent / "data"
 ProgressCallback = Callable[[dict], Awaitable[None] | None]
@@ -77,6 +80,19 @@ def _make_error_result(role: str, description: str, error: str) -> dict:
     }
 
 
+def _format_think_logs(think: str) -> list[dict]:
+    """Convert a K2 <think> block into terminal log entries."""
+    ts = datetime.now(timezone.utc).strftime("%H:%M:%S")
+    # Split on sentence boundaries and newlines
+    sentences = re.split(r'(?<=[.!?])\s+|\n+', think.strip())
+    logs = []
+    for s in sentences:
+        s = s.strip()
+        if len(s) > 15:  # Skip trivially short fragments
+            logs.append({"ts": ts, "msg": f"◆ {s}", "level": "blue"})
+    return logs[:10]  # Cap at 10 lines so the terminal doesn't flood
+
+
 def _parse_dollar_amount(value: str) -> int:
     """Parse a dollar string like '$21,250' into an integer."""
     try:
@@ -140,6 +156,8 @@ async def run_analysis(
         })
         contract_result["impact"] = contract.get("base_fee_monthly", 0)
         contract_result["model"] = contract_llm.model_name
+        if contract_llm._last_think:
+            contract_result["logs"] = _format_think_logs(contract_llm._last_think) + contract_result.get("logs", [])
         await _emit_progress(
             progress_cb,
             account_id,
@@ -170,6 +188,8 @@ async def run_analysis(
         unit_multiplier = contract.get("unit_multiplier", 1)
         usage_result["impact"] = overage_units * overage_rate * unit_multiplier
         usage_result["model"] = usage_llm.model_name
+        if usage_llm._last_think:
+            usage_result["logs"] = _format_think_logs(usage_llm._last_think) + usage_result.get("logs", [])
         await _emit_progress(
             progress_cb,
             account_id,
@@ -196,6 +216,8 @@ async def run_analysis(
         })
         billing_result["impact"] = account_data["invoice"].get("total", 0)
         billing_result["model"] = billing_llm.model_name
+        if billing_llm._last_think:
+            billing_result["logs"] = _format_think_logs(billing_llm._last_think) + billing_result.get("logs", [])
         await _emit_progress(
             progress_cb,
             account_id,
@@ -226,6 +248,8 @@ async def run_analysis(
         net_leakage_str = orch_result.get("output", {}).get("net_leakage", "0")
         orch_result["impact"] = _parse_dollar_amount(net_leakage_str)
         orch_result["model"] = orch_llm.model_name
+        if orch_llm._last_think:
+            orch_result["logs"] = _format_think_logs(orch_llm._last_think) + orch_result.get("logs", [])
         await _emit_progress(
             progress_cb,
             account_id,
@@ -262,6 +286,24 @@ async def run_analysis(
     }
     result["recovery_package"] = generate_recovery_package(result)
     await _emit_progress(progress_cb, account_id, "analysis", "completed")
+
+    # Fire Slack alert (non-blocking — never delays the pipeline response)
+    leakage_amount = orch_result.get("impact", 0)
+    if leakage_amount > 0:
+        top_action = ""
+        recovery_actions = orch_result.get("recovery_actions", [])
+        if recovery_actions:
+            top_action = recovery_actions[0].get("name", "") if isinstance(recovery_actions[0], dict) else str(recovery_actions[0])
+        account_info = account_data.get("account", {})
+        asyncio.create_task(send_leakage_alert(
+            account_name=account_info.get("name", account_id),
+            account_id=account_id,
+            leakage_amount=leakage_amount,
+            confidence=orch_result.get("confidence", 0.0),
+            top_action=top_action,
+            account_tier=account_info.get("tier", ""),
+        ))
+
     return result
 
 

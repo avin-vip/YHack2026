@@ -11,6 +11,7 @@ from fastapi.responses import StreamingResponse
 
 from app.agents.llm import AVAILABLE_MODELS
 from app.services.pipeline import run_analysis
+from app.services.slack import send_batch_summary
 
 router = APIRouter()
 
@@ -79,6 +80,7 @@ async def batch_analyze():
 
     total_leakage = 0
     accounts_with_leakage = 0
+    top_accounts = []
     for r in results:
         leak = r.get("leakage", {})
         net = leak.get("net_leakage", "0")
@@ -86,6 +88,15 @@ async def batch_analyze():
         if amount > 0:
             accounts_with_leakage += 1
             total_leakage += amount
+            top_accounts.append({"name": r.get("account_id", ""), "leakage": amount})
+
+    top_accounts.sort(key=lambda x: x["leakage"], reverse=True)
+    asyncio.create_task(send_batch_summary(
+        total_leakage=total_leakage,
+        accounts_analyzed=len(results),
+        accounts_with_leakage=accounts_with_leakage,
+        top_accounts=top_accounts,
+    ))
 
     return {
         "summary": {
@@ -170,6 +181,7 @@ async def batch_analyze_stream(request: Optional[BatchAnalyzeStreamRequest] = No
 
         total_leakage = 0
         accounts_with_leakage = 0
+        top_accounts = []
         for r in results:
             leak = r.get("leakage", {})
             net = leak.get("net_leakage", "0")
@@ -177,6 +189,15 @@ async def batch_analyze_stream(request: Optional[BatchAnalyzeStreamRequest] = No
             if amount > 0:
                 accounts_with_leakage += 1
                 total_leakage += amount
+                top_accounts.append({"name": r.get("account_id", ""), "leakage": amount})
+
+        top_accounts.sort(key=lambda x: x["leakage"], reverse=True)
+        await send_batch_summary(
+            total_leakage=total_leakage,
+            accounts_analyzed=len(results),
+            accounts_with_leakage=accounts_with_leakage,
+            top_accounts=top_accounts,
+        )
 
         await emit("batch_completed", {
             "run_id": run_id,

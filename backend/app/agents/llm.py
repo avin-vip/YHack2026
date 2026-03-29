@@ -88,6 +88,7 @@ class LLMClient:
         self.run_logger = run_logger
         self.agent_name = agent_name
         self._last_raw: str | None = None
+        self._last_think: str | None = None  # K2 chain-of-thought reasoning
         self._init_provider()
 
     def _init_provider(self):
@@ -228,6 +229,11 @@ class LLMClient:
 
         content = data["choices"][0]["message"]["content"]
         self._last_raw = content
+
+        # Extract K2 chain-of-thought before _extract_json strips it
+        think_match = re.search(r"<think>(.*?)</think>", content, re.DOTALL)
+        self._last_think = think_match.group(1).strip() if think_match else None
+
         return self._extract_json(content)
 
     # ── Lava gateway: OpenAI-compatible providers (GPT-4o, Kimi) ──
