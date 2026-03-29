@@ -95,8 +95,6 @@ export function setAccounts(newAccounts) {
 
 export const ACCOUNTS = [
   { id: 'acme-ent-90210', name: 'Acme Enterprises', arr: 2100000, tier: 'Enterprise Plus', region: 'US-WEST' },
-  { id: 'nexus-corp-40120', name: 'Nexus Corp', arr: 850000, tier: 'Enterprise', region: 'US-EAST' },
-  { id: 'titan-saas-77450', name: 'Titan SaaS', arr: 3400000, tier: 'Enterprise Plus', region: 'US-CENTRAL' },
 ];
 
 export const ACCOUNT_FALLBACK_DATA = {

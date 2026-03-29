@@ -542,7 +542,7 @@ header {
   gap: 18px; z-index: 8; transition: opacity 0.4s;
   pointer-events: none;
 }
-#idle-overlay.hidden { opacity: 0; }
+#idle-overlay.hidden { opacity: 0; pointer-events: none; }
 .idle-hex { font-family: var(--display); font-size: 80px; color: var(--rule2); letter-spacing: 0.06em; line-height: 1; }
 .idle-msg { font-size: 11px; color: var(--dim); letter-spacing: 0.22em; text-transform: uppercase; }
 .idle-key { display: flex; align-items: center; gap: 12px; font-size: 9px; color: var(--dim); }

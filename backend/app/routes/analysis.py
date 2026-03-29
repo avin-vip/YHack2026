@@ -47,17 +47,20 @@ async def batch_analyze():
     if not account_ids:
         raise HTTPException(status_code=404, detail="No accounts found")
 
+    semaphore = asyncio.Semaphore(3)
+
     async def safe_analyze(account_id: str) -> dict:
-        try:
-            return await run_analysis(account_id)
-        except Exception as e:
-            return {
-                "account_id": account_id,
-                "error": str(e),
-                "agents": {},
-                "leakage": {},
-                "recovery_actions": [],
-            }
+        async with semaphore:
+            try:
+                return await run_analysis(account_id)
+            except Exception as e:
+                return {
+                    "account_id": account_id,
+                    "error": str(e),
+                    "agents": {},
+                    "leakage": {},
+                    "recovery_actions": [],
+                }
 
     results = await asyncio.gather(*[safe_analyze(aid) for aid in account_ids])
 

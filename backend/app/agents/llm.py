@@ -265,6 +265,8 @@ class LLMClient:
     @staticmethod
     def _extract_json(text: str) -> dict:
         """Extract JSON from a response that may contain markdown code blocks or surrounding text."""
+        # Strip <think>...</think> blocks (K2 reasoning model wraps output in these)
+        text = re.sub(r"<think>.*?</think>", "", text, flags=re.DOTALL).strip()
         # Direct parse
         try:
             return json.loads(text)

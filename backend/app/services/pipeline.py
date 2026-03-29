@@ -8,6 +8,7 @@ from app.agents.usage import UsageValidator
 from app.agents.billing import BillingAuditor
 from app.agents.orchestrator import Orchestrator
 from app.services.run_logger import RunLogger
+from app.services.recovery import generate_recovery_package
 
 DATA_DIR = Path(__file__).parent.parent.parent / "data"
 
@@ -174,7 +175,7 @@ async def run_analysis(account_id: str, providers: dict | None = None) -> dict:
     log_path = run_logger.save()
 
     # Build final response
-    return {
+    result = {
         "account_id": account_id,
         "run_id": run_logger.run_id,
         "log_file": str(log_path),
@@ -190,6 +191,8 @@ async def run_analysis(account_id: str, providers: dict | None = None) -> dict:
         "billing_payload": orch_result.get("billing_payload", {}),
         "audit_trail": _build_audit_trail(contract_result, usage_result, billing_result, orch_result),
     }
+    result["recovery_package"] = generate_recovery_package(result)
+    return result
 
 
 def _build_audit_trail(contract: dict, usage: dict, billing: dict, orch: dict) -> list[dict]:
